@@ -17,7 +17,9 @@ def seed():
         users = [
             {"name": "Admin User", "email": "admin", "password": "Admin@2026", "role": "admin"},
             {"name": "Driver One", "email": "driver1", "password": "driver123", "role": "driver"},
-            {"name": "Student One", "email": "student1", "password": "pass123", "role": "student"}
+            {"name": "Student One", "email": "student1", "password": "pass123", "role": "student"},
+            {"name": "Staff Member", "email": "staff1", "password": "staff123", "role": "staff"},
+            {"name": "Parent User", "email": "parent1", "password": "parent123", "role": "parent"}
         ]
         
         for user_data in users:
