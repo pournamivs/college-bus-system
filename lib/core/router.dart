@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../features/auth/splash_screen.dart';
-import '../features/auth/login_screen.dart';
-import '../features/student/dashboard/student_main_screen.dart';
-import '../features/student/attendance/student_attendance_screen.dart';
-import '../features/student/fees/student_fines_screen.dart';
-import '../features/student/fees/student_fees_screen.dart';
-import '../features/student/tracking/student_tracking_screen.dart';
-import '../features/student/notifications/student_notifications_screen.dart';
-import '../features/admin/dashboard/admin_main_screen.dart';
-import '../features/driver/dashboard/driver_main_screen.dart';
+import 'package:track_my_bus/features/auth/splash_screen.dart';
+import 'package:track_my_bus/features/auth/login_screen.dart';
+import 'package:track_my_bus/features/student/dashboard/student_main_screen.dart';
+import 'package:track_my_bus/features/student/attendance/student_attendance_screen.dart';
+import 'package:track_my_bus/features/student/fees/student_fines_screen.dart';
+import 'package:track_my_bus/features/student/fees/student_fees_screen.dart';
+import 'package:track_my_bus/features/student/tracking/student_tracking_screen.dart';
+import 'package:track_my_bus/features/student/notifications/student_notifications_screen.dart';
+import 'package:track_my_bus/features/admin/dashboard/admin_main_screen.dart';
+import 'package:track_my_bus/features/driver/dashboard/driver_main_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',

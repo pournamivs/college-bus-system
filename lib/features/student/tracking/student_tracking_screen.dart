@@ -2,7 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../core/constants/app_colors.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:track_my_bus/core/constants/api_constants.dart';
+import 'package:track_my_bus/core/constants/app_colors.dart';
 
 class StudentTrackingScreen extends StatefulWidget {
   const StudentTrackingScreen({super.key});
@@ -13,46 +17,39 @@ class StudentTrackingScreen extends StatefulWidget {
 
 class _StudentTrackingScreenState extends State<StudentTrackingScreen> {
   final MapController _mapController = MapController();
-  Timer? _timer;
-  
-  // Dummy route points in Kerala
-  final List<LatLng> _routePoints = [
-    const LatLng(9.9816, 76.2999), // Kakkanad
-    const LatLng(9.9926, 76.3262), // InfoPark
-    const LatLng(10.0070, 76.3533), // Kizhakkambalam
-    const LatLng(10.0150, 76.3887), // Pattimattom
-    const LatLng(10.0211, 76.4338), // Kadayiruppu (College)
-  ];
-  
-  int _currentRouteIndex = 0;
-  late LatLng _currentBusPosition;
-  final LatLng _studentStop = const LatLng(10.0070, 76.3533); // Example: Kizhakkambalam
+  WebSocketChannel? _channel;
+  LatLng _currentBusPosition = const LatLng(10.02, 76.32);
+  final LatLng _studentStop = const LatLng(10.0070, 76.3533);
+  String _busId = '102';
+  bool _isConnected = false;
 
   @override
   void initState() {
     super.initState();
-    _currentBusPosition = _routePoints[_currentRouteIndex];
-    _startSimulation();
+    _connectToWebSocket();
   }
 
-  void _startSimulation() {
-    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (!mounted) return;
-      setState(() {
-        if (_currentRouteIndex < _routePoints.length - 1) {
-          _currentRouteIndex++;
-          _currentBusPosition = _routePoints[_currentRouteIndex];
-        } else {
-          _currentRouteIndex = 0; // Loop back for demo
-          _currentBusPosition = _routePoints[_currentRouteIndex];
-        }
-      });
+  Future<void> _connectToWebSocket() async {
+    _channel = WebSocketChannel.connect(
+      Uri.parse('${ApiConstants.wsBaseUrl}/ws/bus/bus_$_busId'),
+    );
+    _channel?.stream.listen((message) {
+      final data = jsonDecode(message);
+      if (mounted) {
+        setState(() {
+          _currentBusPosition = LatLng(data['lat'], data['lng']);
+          _isConnected = true;
+        });
+      }
+    }, onError: (e) {
+      debugPrint("WebSocket Error: $e");
+      setState(() => _isConnected = false);
     });
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _channel?.sink.close();
     _mapController.dispose();
     super.dispose();
   }
@@ -73,23 +70,15 @@ class _StudentTrackingScreenState extends State<StudentTrackingScreen> {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: _routePoints[0],
+              initialCenter: _studentStop,
               initialZoom: 13.0,
             ),
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.trackmybus',
+                userAgentPackageName: 'com.trackmybus.app',
               ),
-              PolylineLayer(
-                polylines: [
-                  Polyline(
-                    points: _routePoints,
-                    strokeWidth: 4.0,
-                    color: AppColors.primary.withOpacity(0.7),
-                  ),
-                ],
-              ),
+              // PolylineLayer removed or should be dynamic
               MarkerLayer(
                 markers: [
                   // Student Stop
@@ -137,11 +126,12 @@ class _StudentTrackingScreenState extends State<StudentTrackingScreen> {
                       child: Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
                     ),
                     const SizedBox(height: 20),
-                    const Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Route A - KL-07-AB-1234', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text('10 mins ETA', style: TextStyle(fontSize: 16, color: AppColors.success, fontWeight: FontWeight.bold)),
+                        Text('Bus #$_busId - Live Location', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text(_isConnected ? 'Connected' : 'Waiting for bus...', 
+                            style: TextStyle(fontSize: 16, color: _isConnected ? AppColors.success : AppColors.error, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     const SizedBox(height: 12),

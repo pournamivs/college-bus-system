@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/constants/app_colors.dart';
-import '../../core/widgets/app_button.dart';
-import '../../core/widgets/app_text_field.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:track_my_bus/core/constants/api_constants.dart';
+import 'package:track_my_bus/core/constants/app_colors.dart';
+import 'package:track_my_bus/core/widgets/app_button.dart';
+import 'package:track_my_bus/core/widgets/app_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,26 +24,53 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _errorMessage;
 
   void _login() async {
+    if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
+      setState(() => _errorMessage = 'Please enter both username and password');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    await Future.delayed(const Duration(seconds: 1)); // Simulate API
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.apiBaseUrl}/api/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': _usernameController.text, // Backend uses 'email' key
+          'password': _passwordController.text,
+        }),
+      ).timeout(const Duration(seconds: 10));
 
-    if (!mounted) return;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        
+        await prefs.setString('token', data['access_token']);
+        await prefs.setString('role', data['user']['role']);
+        await prefs.setString('name', data['user']['name']);
 
-    if (_role == 'Student' && _usernameController.text == 'student1' && _passwordController.text == 'pass123') {
-      context.go('/student');
-    } else if (_role == 'Admin' && _usernameController.text == 'admin' && _passwordController.text == 'Admin@2026') {
-      context.go('/admin');
-    } else if (_role == 'Driver' && _usernameController.text == 'driver1' && _passwordController.text == 'driver123') {
-      context.go('/driver');
-    } else {
+        if (!mounted) return;
+        
+        final String role = data['user']['role'].toLowerCase();
+        if (role == 'admin') context.go('/admin');
+        else if (role == 'driver') context.go('/driver');
+        else if (role == 'student') context.go('/student');
+        else context.go('/student'); // Fallback
+      } else {
+        setState(() {
+          _errorMessage = 'Invalid credentials for $_role';
+        });
+      }
+    } catch (e) {
       setState(() {
-        _isLoading = false;
-        _errorMessage = 'Invalid credentials for $_role';
+        _errorMessage = 'Connection Error: Check if backend is running.';
       });
+      debugPrint("LOGIN ERROR: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

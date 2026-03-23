@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../core/constants/app_colors.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'package:track_my_bus/core/constants/api_constants.dart';
+import 'package:track_my_bus/core/constants/app_colors.dart';
 
 class DriverMainScreen extends StatefulWidget {
   const DriverMainScreen({super.key});
@@ -13,10 +20,85 @@ class DriverMainScreen extends StatefulWidget {
 
 class _DriverMainScreenState extends State<DriverMainScreen> {
   bool _isTripStarted = false;
+  WebSocketChannel? _channel;
+  StreamSubscription<Position>? _positionStream;
+  LatLng _currentLocation = const LatLng(10.02, 76.32);
+  Map<String, dynamic>? _assignedBus;
+  String _statusMessage = 'Fetching assigned bus...';
 
-  void _toggleTrip() {
+  @override
+  void initState() {
+    super.initState();
+    _fetchAssignedBus();
+  }
+
+  Future<void> _fetchAssignedBus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.apiBaseUrl}/api/driver/my-bus'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          _assignedBus = jsonDecode(response.body);
+          _statusMessage = 'Ready on ${_assignedBus!['name']}';
+        });
+      } else {
+        setState(() => _statusMessage = 'No bus assigned');
+      }
+    } catch (e) {
+      debugPrint("Bus fetch error: $e");
+      setState(() => _statusMessage = 'Offline - Check Backend');
+    }
+  }
+
+  void _toggleTrip() async {
+    if (_isTripStarted) {
+      _stopTrip();
+    } else {
+      await _startTrip();
+    }
+  }
+
+  Future<void> _startTrip() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+    
     setState(() {
-      _isTripStarted = !_isTripStarted;
+      _isTripStarted = true;
+      _statusMessage = 'Broadcasting...';
+    });
+
+    final busId = _assignedBus?['id'] ?? 102;
+    _channel = WebSocketChannel.connect(
+      Uri.parse('${ApiConstants.wsBaseUrl}/ws/bus/bus_$busId'),
+    );
+
+    _positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10),
+    ).listen((position) {
+      setState(() {
+        _currentLocation = LatLng(position.latitude, position.longitude);
+      });
+      _channel?.sink.add(jsonEncode({
+        'lat': position.latitude,
+        'lng': position.longitude,
+        'timestamp': DateTime.now().toIso8601String(),
+      }));
+    });
+  }
+
+  void _stopTrip() {
+    _positionStream?.cancel();
+    _channel?.sink.close();
+    setState(() {
+      _isTripStarted = false;
+      _statusMessage = 'Trip Ended';
     });
   }
 
@@ -39,13 +121,14 @@ class _DriverMainScreenState extends State<DriverMainScreen> {
           // Map View
           Expanded(
             child: FlutterMap(
-              options: const MapOptions(
-                initialCenter: LatLng(10.02, 76.32), // Ernakulam approximate
-                initialZoom: 14.0,
+              options: MapOptions(
+                initialCenter: _currentLocation,
+                initialZoom: 15.0,
               ),
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.trackmybus.app',
                 ),
                 if (_isTripStarted)
                   const MarkerLayer(
@@ -83,9 +166,9 @@ class _DriverMainScreenState extends State<DriverMainScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Route A - Ernakulam', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text(_assignedBus?['name'] ?? 'Loading Bus...', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 4),
-                        Text(_isTripStarted ? 'Trip in progress - Sharing Location' : 'Trip not started', 
+                        Text(_statusMessage, 
                             style: TextStyle(color: _isTripStarted ? AppColors.success : AppColors.textSecondary)),
                       ],
                     ),

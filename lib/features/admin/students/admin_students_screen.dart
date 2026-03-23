@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+import 'package:track_my_bus/core/constants/app_colors.dart';
 
 class AdminStudentsScreen extends StatelessWidget {
   const AdminStudentsScreen({super.key});

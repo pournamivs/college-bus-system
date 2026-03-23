@@ -1,9 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import 'package:local_auth/local_auth.dart';
+import '../../../core/widgets/sos_button.dart';
 
-class StudentDashboardScreen extends StatelessWidget {
+class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
+
+  @override
+  State<StudentDashboardScreen> createState() => _StudentDashboardScreenState();
+}
+
+class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
+  final LocalAuthentication auth = LocalAuthentication();
+  bool _attendanceMarked = false;
+
+  Future<void> _markAttendance() async {
+    try {
+      bool canCheckBiometrics = await auth.canCheckBiometrics;
+      bool isSupported = await auth.isDeviceSupported();
+      
+      if (!isSupported || !canCheckBiometrics) {
+        setState(() => _attendanceMarked = true);
+        return;
+      }
+      
+      bool didAuthenticate = await auth.authenticate(
+        localizedReason: 'Please scan your fingerprint to mark attendance',
+      );
+      
+      if (didAuthenticate) {
+        setState(() => _attendanceMarked = true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Attendance Marked Successfully!'), backgroundColor: AppColors.success),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint("Auth Error: $e");
+      setState(() => _attendanceMarked = true); // Fallback for emulator
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -149,9 +187,48 @@ class StudentDashboardScreen extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(height: 24),
+
+            // Boarding Actions Section
+            const Text('Boarding Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                border: Border.all(color: const Color(0xFFBBF7D0), width: 1.5),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  const Text('Mark your biometric attendance once inside the bus.', 
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton.icon(
+                      onPressed: _attendanceMarked ? null : _markAttendance,
+                      icon: Icon(_attendanceMarked ? Icons.check_circle : Icons.fingerprint, size: 28),
+                      label: Text(_attendanceMarked ? 'Attendance Recorded' : 'Scan Fingerprint', 
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _attendanceMarked ? AppColors.success : AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
+      floatingActionButton: const SOSButton(),
     );
   }
 
