@@ -27,12 +27,11 @@ class AuthService {
             Uri.parse('$baseUrl/api/auth/login'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
-            body: jsonEncode({
-              'username': username,
+              'email': username,
               'password': password,
             }),
           )
-            .timeout(const Duration(seconds: 120));
+          .timeout(const Duration(seconds: 120));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

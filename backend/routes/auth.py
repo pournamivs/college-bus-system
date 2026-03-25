@@ -77,14 +77,11 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login")
 @limiter.limit("20/minute")
-async def login(request: Request, req: dict, db: Session = Depends(get_db)):
-    # Very robust login for demo - supports both 'email' or 'username' fields in JSON
-    username_or_email = req.get("email") or req.get("username")
-    password = req.get("password")
+async def login(request: Request, req: schemas.LoginRequest, db: Session = Depends(get_db)):
+    # Very robust login for demo
+    username_or_email = req.email
+    password = req.password
     
-    if not username_or_email or not password:
-        raise HTTPException(status_code=400, detail="Missing credentials")
-        
     db_user = db.query(models.User).filter(
         (models.User.email == username_or_email) | (models.User.name == username_or_email)
     ).first()
