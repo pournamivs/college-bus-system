@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:track_my_bus/core/constants/app_colors.dart';
+import 'package:track_my_bus/core/services/auth_service.dart';
+import 'package:track_my_bus/core/widgets/brand_logo.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,14 +12,41 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final AuthService _authService = AuthService();
+
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        context.go('/login');
-      }
-    });
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    await Future.delayed(const Duration(milliseconds: 1400));
+    final role = await _authService.getRole();
+    final isLoggedIn = await _authService.isLoggedIn();
+    if (!mounted) return;
+
+    if (!isLoggedIn || role == null || role.isEmpty) {
+      context.go('/login');
+      return;
+    }
+
+    switch (role.toLowerCase()) {
+      case 'admin':
+        context.go('/admin');
+        break;
+      case 'driver':
+        context.go('/driver');
+        break;
+      case 'staff':
+        context.go('/staff');
+        break;
+      case 'parent':
+        context.go('/parent');
+        break;
+      default:
+        context.go('/student');
+    }
   }
 
   @override
@@ -28,16 +57,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Image.asset('assets/images/app_logo.png', fit: BoxFit.cover),
-            ),
+            const BrandLogo(size: 120),
             const SizedBox(height: 24),
             const Text(
               'TrackMyBus',

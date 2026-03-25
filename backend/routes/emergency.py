@@ -7,25 +7,23 @@ from routes.auth import get_current_user
 from websocket_manager import manager
 import firebase_admin
 from firebase_admin import messaging
+import models
+import schemas
 
 router = APIRouter()
 
-@router.post("/trigger", response_model=EmergencyAlertResponse)
-async def trigger_emergency(
-    alert_data: EmergencyAlertCreate,
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
+@router.post("/trigger", response_model=schemas.EmergencyAlertResponse)
+async def trigger_alert(alert: schemas.EmergencyAlertCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_id = current_user.get("user_id")
     role = current_user.get("role")
     
-    new_alert = EmergencyAlert(
+    new_alert = models.EmergencyAlert(
         user_id=user_id,
         user_role=role,
-        bus_id=alert_data.bus_id,
-        latitude=alert_data.latitude,
-        longitude=alert_data.longitude,
-        alert_type=alert_data.alert_type,
+        bus_id=alert.bus_id,
+        latitude=alert.latitude,
+        longitude=alert.longitude,
+        alert_type=alert.alert_type,
         status="active"
     )
     

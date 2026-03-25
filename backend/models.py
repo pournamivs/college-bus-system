@@ -56,17 +56,18 @@ class Attendance(Base):
     bus_id = Column(Integer, ForeignKey("buses.id"))
     timestamp = Column(DateTime, default=datetime.utcnow)
 
+
 class EmergencyAlert(Base):
     __tablename__ = "emergency_alerts"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    user_role = Column(String)  # student, driver, staff
-    bus_id = Column(Integer, ForeignKey("buses.id"), nullable=True)
+    user_role = Column(String(50))
+    bus_id = Column(String(50), nullable=True) # E.g., 'bus_1'
     timestamp = Column(DateTime, default=datetime.utcnow)
-    latitude = Column(Float)
-    longitude = Column(Float)
-    alert_type = Column(String)  # medical, safety, breakdown, other
-    status = Column(String, default="active")  # active, acknowledged, resolved
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    alert_type = Column(String(100)) # SOS, Accident, Breakdown, Medical
+    status = Column(String(50), default="active") # active, resolved
     acknowledged_by = Column(Integer, ForeignKey("users.id"), nullable=True) # admin_id
     resolved_at = Column(DateTime, nullable=True)
 
@@ -77,3 +78,11 @@ class LinkingRequest(Base):
     student_email = Column(String)
     status = Column(String, default="pending") # pending, approved, rejected
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class Fine(Base):
+    __tablename__ = "fines"
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"))
+    amount = Column(Float, nullable=False)
+    reason = Column(String(200), nullable=False)
+    status = Column(String(50), default="unpaid") # paid, unpaid, pending

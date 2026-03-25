@@ -4,7 +4,7 @@ from datetime import datetime
 
 class UserCreate(BaseModel):
     name: str
-    email: EmailStr
+    email: str
     password: str
     role: str
     rfid_tag: Optional[str] = None
@@ -37,7 +37,7 @@ class FCMTokenUpdate(BaseModel):
     fcm_token: str
 
 class StudentLinkRequest(BaseModel):
-    student_email: EmailStr
+    student_email: str
 
 class LinkingRequestResponse(BaseModel):
     id: int
@@ -54,7 +54,7 @@ class Token(BaseModel):
     token_type: str
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class EmergencyAlertCreate(BaseModel):
@@ -76,5 +76,40 @@ class EmergencyAlertResponse(BaseModel):
     acknowledged_by: Optional[int]
     resolved_at: Optional[datetime]
 
+    class Config:
+        from_attributes = True
+
+class FineCreate(BaseModel):
+    student_id: int
+    amount: float
+    reason: str
+
+class PaymentCreate(BaseModel):
+    fine_id: Optional[int] = None
+    amount: float
+
+class AttendanceCreate(BaseModel):
+    rfid_tag: Optional[str] = None
+    bus_id: int
+
+class AttendanceResponse(BaseModel):
+    id: int
+    user_id: int
+    bus_id: int
+    timestamp: datetime
+    class Config:
+        from_attributes = True
+
+class MaintenanceCreate(BaseModel):
+    bus_id: int
+    issue_description: str
+
+class MaintenanceResponse(BaseModel):
+    id: int
+    bus_id: int
+    driver_id: int
+    issue_description: str
+    status: str
+    reported_at: datetime
     class Config:
         from_attributes = True

@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:track_my_bus/features/auth/splash_screen.dart';
 import 'package:track_my_bus/features/auth/login_screen.dart';
+import 'package:track_my_bus/features/auth/register_screen.dart';
 import 'package:track_my_bus/features/student/dashboard/student_dashboard_screen.dart';
 import 'package:track_my_bus/features/student/attendance/student_attendance_screen.dart';
-import 'package:track_my_bus/features/student/fees/student_fines_screen.dart';
 import 'package:track_my_bus/features/student/fees/student_fees_screen.dart';
 import 'package:track_my_bus/features/student/tracking/student_tracking_screen.dart';
 import 'package:track_my_bus/features/student/notifications/student_notifications_screen.dart';
@@ -25,6 +24,11 @@ final GoRouter appRouter = GoRouter(
       path: '/login',
       name: 'login',
       builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/register',
+      name: 'register',
+      builder: (context, state) => const RegisterScreen(),
     ),
     GoRoute(
       path: '/student',

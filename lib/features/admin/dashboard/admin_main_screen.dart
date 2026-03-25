@@ -5,6 +5,7 @@ import 'package:track_my_bus/features/admin/students/admin_students_screen.dart'
 import 'package:track_my_bus/features/admin/drivers/admin_drivers_screen.dart';
 import 'package:track_my_bus/features/admin/fees/admin_fees_screen.dart';
 import 'package:track_my_bus/features/admin/settings/admin_settings_screen.dart';
+import 'package:track_my_bus/features/admin/payments/admin_payments_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({super.key});
@@ -18,10 +19,11 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
 
   final List<Widget> _screens = [
     const AdminDashboardScreen(),
-    const AdminStudentsScreen(),
-    const AdminDriversScreen(),
-    const AdminFeesScreen(),
-    const AdminSettingsScreen(),
+    const AdminUsersScreen(),
+    const AdminMapScreen(),
+    const AdminEmergenciesScreen(),
+    const AdminRoutesScreen(),
+    const AdminPaymentsScreen(),
   ];
 
   @override
@@ -35,11 +37,12 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textSecondary,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Students'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Drivers'),
-          BottomNavigationBarItem(icon: Icon(Icons.payment), label: 'Fees'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Stats'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Users'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
+          BottomNavigationBarItem(icon: Icon(Icons.warning), label: 'SOS'),
+          BottomNavigationBarItem(icon: Icon(Icons.alt_route), label: 'Routes'),
+          BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Fees'),
         ],
       ),
     );

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-import models
+import models, schemas
 from .auth import get_current_user
 
 router = APIRouter()
@@ -23,11 +23,11 @@ def get_my_bus(db: Session = Depends(get_db), current_user: dict = Depends(get_c
     }
 
 @router.post("/maintenance")
-def report_issue(issue: dict, db: Session = Depends(get_db)):
+def report_issue(issue: schemas.MaintenanceCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     new_maint = models.Maintenance(
-        bus_id=issue["bus_id"], 
-        driver_id=issue["driver_id"], 
-        issue_description=issue["issue_description"], 
+        bus_id=issue.bus_id, 
+        driver_id=current_user["user_id"], 
+        issue_description=issue.issue_description, 
         status="reported"
     )
     db.add(new_maint)

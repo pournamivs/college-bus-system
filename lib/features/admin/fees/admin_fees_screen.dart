@@ -1,59 +1,76 @@
 import 'package:flutter/material.dart';
-import 'package:track_my_bus/core/constants/app_colors.dart';
-import '../../../core/widgets/status_chip.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/api_constants.dart';
 
-class AdminFeesScreen extends StatelessWidget {
-  const AdminFeesScreen({super.key});
+class AdminEmergenciesScreen extends StatefulWidget {
+  const AdminEmergenciesScreen({super.key});
+
+  @override
+  State<AdminEmergenciesScreen> createState() => _AdminEmergenciesScreenState();
+}
+
+class _AdminEmergenciesScreenState extends State<AdminEmergenciesScreen> {
+  List<dynamic> _alerts = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAlerts();
+  }
+
+  Future<void> _fetchAlerts() async {
+    setState(() => _isLoading = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final res = await http.get(
+        Uri.parse('${ApiConstants.apiBaseUrl}/api/emergency/'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (res.statusCode == 200) {
+        setState(() => _alerts = jsonDecode(res.body));
+      }
+    } catch (e) {
+      debugPrint('Error fetching alerts: $e');
+    }
+    setState(() => _isLoading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          title: const Text('Fee Management', style: TextStyle(color: Colors.white)),
-          backgroundColor: AppColors.primary,
-          bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
-            tabs: [
-              Tab(text: 'Pending'),
-              Tab(text: 'Collected'),
-              Tab(text: 'All'),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: 3,
-              itemBuilder: (context, index) {
-                return Card(
-                  child: ListTile(
-                    title: const Text('Rahul Kumar'),
-                    subtitle: const Text('Sem 5 Fee • Due: 15 Oct\nRoute A'),
-                    isThreeLine: true,
-                    trailing: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text('₹12,500', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        SizedBox(height: 4),
-                        StatusChip(label: 'Overdue'),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-            const Center(child: Text('Collected Fees')),
-            const Center(child: Text('All Fees')),
-          ],
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Emergency Control'),
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchAlerts),
+        ],
       ),
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator()) 
+        : ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _alerts.length,
+            itemBuilder: (ctx, i) {
+              final a = _alerts[i];
+              return Card(
+                color: AppColors.error.withOpacity(0.1),
+                borderOnForeground: true,
+                child: ListTile(
+                  leading: const Icon(Icons.warning, color: AppColors.error),
+                  title: Text('SOS from Role: ${a['user_role']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text('Status: ${a['status']} | Type: ${a['alert_type']}\nLocation: ${a['latitude']}, ${a['longitude']}'),
+                  trailing: ElevatedButton(
+                    onPressed: () {}, // Backend resolve logic 
+                    child: const Text('RESOLVE'),
+                  ),
+                ),
+              );
+            },
+          ),
     );
   }
 }

@@ -1,21 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/constants/app_theme.dart';
 import 'core/router.dart';
 import 'core/services/notification_service.dart';
-import 'package:provider/provider.dart';
+import 'core/services/discovery_service.dart';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'dart:ui';
+import 'dart:async';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   try {
     await Firebase.initializeApp();
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     await NotificationService().initialize();
+    await DiscoveryService.discoverApi();
   } catch (e) {
-    debugPrint("Firebase init error: $e");
+    debugPrint("Init error: $e");
   }
   
-  runApp(const TrackMyBusApp());
+  runApp(const ProviderScope(child: TrackMyBusApp()));
 }
 
 class TrackMyBusApp extends StatelessWidget {

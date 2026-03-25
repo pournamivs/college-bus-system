@@ -1,5 +1,18 @@
 import math
 import json
+import requests
+
+def snap_to_road(lat, lng):
+    try:
+        url = f"http://router.project-osrm.org/match/v1/driving/{lng},{lat}?radiuses=50"
+        response = requests.get(url, timeout=2).json()
+        if response.get("code") == "Ok" and response.get("tracepoints"):
+            pt = response["tracepoints"][0]["location"]
+            # returns snapped lat, lng
+            return pt[1], pt[0]
+    except Exception:
+        pass
+    return lat, lng
 
 # Memory cache for smoothing speeds: { bus_id: [speed1, speed2, speed3] }
 _speed_history = {}
@@ -27,7 +40,7 @@ def get_smoothed_speed(bus_id: str, current_speed_mps: float) -> float:
         
     return sum(_speed_history[bus_id]) / len(_speed_history[bus_id])
 
-def calculate_payload_eta(bus_id: str, lat: float, lng: float, raw_speed: float, route_stops_json: str):
+def calculate_payload_eta(bus_id: str, lat: float, lng: float, current_speed_kh: float, route_stops_json: str):
     """
     Returns dict with keys: next_stop, distance_to_stop, eta_minutes, eta_status
     """
@@ -57,7 +70,8 @@ def calculate_payload_eta(bus_id: str, lat: float, lng: float, raw_speed: float,
             "eta_status": "Arrived"
         }
         
-    smoothed_speed = get_smoothed_speed(bus_id, raw_speed)
+    lat, lng = snap_to_road(lat, lng)
+    smoothed_speed = get_smoothed_speed(bus_id, current_speed_kh)
     
     # Calculate ETA based on speed
     if smoothed_speed == 0:

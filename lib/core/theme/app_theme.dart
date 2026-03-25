@@ -23,9 +23,9 @@ class AppTheme {
 
   // Button Theme
   static ButtonStyle buttonStyle = TextButton.styleFrom(
-    primary: Colors.white,
+    foregroundColor: Colors.white,
     backgroundColor: primaryColor,
-    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(8),
     ),
@@ -39,7 +39,7 @@ class AppTheme {
       BoxShadow(
         color: Colors.black12,
         blurRadius: 8,
-        offset: Offset(0, 4),
+        offset: const Offset(0, 4),
       ),
     ],
   );

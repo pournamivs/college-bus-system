@@ -1,0 +1,15 @@
+Analyzing college-bus-system...                                 
+
+warning - The value of the field '_buses' isn't used - lib\features\admin\drivers\admin_drivers_screen.dart:19:17 - unused_field
+   info - Empty catch block - lib\features\admin\drivers\admin_drivers_screen.dart:38:17 - empty_catches
+   info - Empty catch block - lib\features\admin\fees\admin_fees_screen.dart:37:17 - empty_catches
+   info - Empty catch block - lib\features\admin\payments\admin_payments_screen.dart:91:27 - empty_catches
+   info - Empty catch block - lib\features\admin\settings\admin_settings_screen.dart:36:17 - empty_catches
+   info - Empty catch block - lib\features\admin\settings\admin_settings_screen.dart:72:27 - empty_catches
+   info - Empty catch block - lib\features\admin\students\admin_students_screen.dart:38:17 - empty_catches
+   info - Empty catch block - lib\features\admin\students\admin_students_screen.dart:53:17 - empty_catches
+   info - The imported package 'path_provider' isn't a dependency of the importing package - lib\features\student\payments\student_payment_screen.dart:8:8 - depend_on_referenced_packages
+   info - Empty catch block - lib\features\student\payments\student_payment_screen.dart:40:17 - empty_catches
+   info - Empty catch block - lib\features\student\payments\student_payment_screen.dart:65:17 - empty_catches
+
+11 issues found. (ran in 3.3s)

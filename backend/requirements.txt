@@ -2,9 +2,11 @@ fastapi
 uvicorn
 sqlalchemy
 pydantic
-websockets
-python-dotenv
-passlib[bcrypt]
 python-jose[cryptography]
+passlib[bcrypt]
+websockets
 python-multipart
 firebase-admin
+slowapi
+razorpay
+requests

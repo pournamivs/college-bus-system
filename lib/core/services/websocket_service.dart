@@ -21,6 +21,7 @@ class WebSocketService {
   ConnectionStatus _currentStatus = ConnectionStatus.disconnected;
   Timer? _reconnectTimer;
   String? _currentBusId;
+  int _retryCount = 0;
 
   void connect(String busId) {
     if (_currentBusId == busId && _currentStatus == ConnectionStatus.connected) return;
@@ -39,10 +40,12 @@ class WebSocketService {
       final url = '${ApiConstants.wsBaseUrl}/ws/bus/bus_$_currentBusId';
       _channel = WebSocketChannel.connect(Uri.parse(url));
       
+      _currentStatus = ConnectionStatus.connected;
+      _statusController.add(ConnectionStatus.connected);
+      _retryCount = 0;
+      
       _channel!.stream.listen(
         (message) {
-          _currentStatus = ConnectionStatus.connected;
-          _statusController.add(ConnectionStatus.connected);
           try {
             final data = jsonDecode(message);
             _dataController.add(data);
@@ -63,7 +66,9 @@ class WebSocketService {
     _currentStatus = ConnectionStatus.disconnected;
     _statusController.add(ConnectionStatus.disconnected);
     _reconnectTimer?.cancel();
-    _reconnectTimer = Timer(const Duration(seconds: 5), () {
+    _retryCount++;
+    final backoffSeconds = (_retryCount * 2).clamp(2, 20);
+    _reconnectTimer = Timer(Duration(seconds: backoffSeconds), () {
       if (_currentStatus == ConnectionStatus.disconnected) {
         _establishConnection();
       }
@@ -71,7 +76,7 @@ class WebSocketService {
   }
 
   void send(Map<String, dynamic> data) {
-    if (_currentStatus == ConnectionStatus.connected) {
+    if (_channel != null) {
       _channel?.sink.add(jsonEncode(data));
     }
   }
@@ -82,5 +87,6 @@ class WebSocketService {
     _currentStatus = ConnectionStatus.disconnected;
     _statusController.add(ConnectionStatus.disconnected);
     _currentBusId = null;
+    _retryCount = 0;
   }
 }

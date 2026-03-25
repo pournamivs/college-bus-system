@@ -9,6 +9,25 @@ router = APIRouter()
 def get_users(db: Session = Depends(get_db)):
     return db.query(models.User).all()
 
+@router.delete("/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted"}
+
+@router.put("/users/{user_id}")
+def update_user(user_id: int, user_data: dict, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if "role" in user_data: user.role = user_data["role"]
+    if "name" in user_data: user.name = user_data["name"]
+    db.commit()
+    return user
+
 @router.post("/buses")
 def create_bus(bus: schemas.BusCreate, db: Session = Depends(get_db)):
     new_bus = models.Bus(
@@ -55,3 +74,24 @@ def create_route(route: schemas.RouteCreate, db: Session = Depends(get_db)):
 @router.get("/routes")
 def get_routes(db: Session = Depends(get_db)):
     return db.query(models.Route).all()
+
+@router.post("/fines")
+def create_fine(fine: schemas.FineCreate, db: Session = Depends(get_db)):
+    new_fine = models.Fine(student_id=fine.student_id, amount=fine.amount, reason=fine.reason)
+    db.add(new_fine)
+    db.commit()
+    db.refresh(new_fine)
+    return new_fine
+
+@router.get("/payments")
+def get_admin_payments(db: Session = Depends(get_db)):
+    return db.query(models.Payment).all()
+
+@router.get("/maintenance", response_model=list[schemas.MaintenanceResponse])
+def get_all_maintenance(db: Session = Depends(get_db)):
+    return db.query(models.Maintenance).all()
+
+@router.get("/emergency", response_model=list[schemas.EmergencyAlertResponse])
+def get_all_emergency(db: Session = Depends(get_db)):
+    return db.query(models.EmergencyAlert).all()
+

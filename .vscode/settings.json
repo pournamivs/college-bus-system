@@ -1,3 +1,12 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.import.exclusions": [
+        "**/android/**",
+        "**/ios/**",
+        "**/build/**"
+    ],
+    "python.defaultInterpreterPath": "backend/venv/Scripts/python.exe",
+    "python.analysis.extraPaths": [
+        "backend"
+    ]
 }

@@ -23,7 +23,7 @@ class ParentDashboardScreen extends StatefulWidget {
 class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
   final WebSocketService _wsService = WebSocketService();
   final AuthService _authService = AuthService();
-  
+
   List<dynamic> _children = [];
   bool _isLoading = true;
   LatLng _busLocation = const LatLng(10.0276, 76.3084);
@@ -59,16 +59,82 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
     }
   }
 
+  void _showAddChildDialog() {
+    final emailCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Link Child'),
+        content: TextField(
+          controller: emailCtrl,
+          decoration: const InputDecoration(
+            labelText: "Child's Username",
+            hintText: "student1",
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('CANCEL'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final token = await _authService.getToken();
+              try {
+                final res = await http.post(
+                  Uri.parse('${ApiConstants.apiBaseUrl}/api/auth/link-student'),
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer $token',
+                  },
+                  body: jsonEncode({'student_email': emailCtrl.text.trim()}),
+                );
+                if (res.statusCode == 200 || res.statusCode == 201) {
+                  if (mounted) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Student linked!')),
+                    );
+                    _fetchChildren();
+                  }
+                } else {
+                  if (mounted)
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: ${res.body}')),
+                    );
+                }
+              } catch (e) {
+                debugPrint('Link child failed: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Failed to link student. Please try again.',
+                      ),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('LINK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _startTracking(dynamic child) {
     _wsService.disconnect();
     _dataSub?.cancel();
-    
+
     setState(() {
       _isTracking = true;
       _trackingChildName = child['name'];
     });
-    
-    _wsService.connect('102'); // Example Bus ID for Child
+
+    final busId = child['assigned_bus_id']?.toString() ?? '102';
+    _wsService.connect(busId); 
     _dataSub = _wsService.dataStream.listen((data) {
       if (mounted && data['lat'] != null && data['lng'] != null) {
         setState(() {
@@ -91,10 +157,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
         children: [
           // Background Map
           FlutterMap(
-            options: MapOptions(
-              initialCenter: _busLocation,
-              initialZoom: 14.0,
-            ),
+            options: MapOptions(initialCenter: _busLocation, initialZoom: 14.0),
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -111,10 +174,19 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                            ),
+                          ],
                         ),
                         padding: const EdgeInsets.all(8),
-                        child: const Icon(Icons.directions_bus, color: AppColors.primary, size: 30),
+                        child: const Icon(
+                          Icons.directions_bus,
+                          color: AppColors.primary,
+                          size: 30,
+                        ),
                       ),
                     ),
                   ],
@@ -132,14 +204,29 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
               children: [
                 const Text(
                   'Parent Connect',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 GestureDetector(
-                  onTap: () => context.go('/login'),
+                  onTap: () async {
+                    await AuthService().logout();
+                    if (context.mounted) context.go('/login');
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: AppColors.divider)),
-                    child: const Icon(Icons.logout, color: AppColors.error, size: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: const Icon(
+                      Icons.logout,
+                      color: AppColors.error,
+                      size: 20,
+                    ),
                   ),
                 ),
               ],
@@ -160,9 +247,11 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
               ],
             ),
           ),
-          
+
           if (_isLoading)
-            const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+            const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
         ],
       ),
     );
@@ -174,64 +263,112 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'SELECT CHILD TO TRACK',
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary, letterSpacing: 1.2),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'SELECT CHILD TO TRACK',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textSecondary,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              GestureDetector(
+                onTap: () => _showAddChildDialog(),
+                child: const Icon(
+                  Icons.add_circle_outline,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           SizedBox(
             height: 80,
-            child: _children.isEmpty 
-              ? const Center(child: Text('No children linked', style: TextStyle(color: Colors.grey)))
-              : ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _children.length,
-                itemBuilder: (context, index) {
-                  final child = _children[index];
-                  final isSelected = _trackingChildName == child['name'];
-                  return GestureDetector(
-                    onTap: () => _startTracking(child),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: 140,
-                      margin: const EdgeInsets.only(right: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary : Colors.white.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: isSelected ? AppColors.primary : Colors.transparent),
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 18,
-                            backgroundColor: isSelected ? Colors.white.withOpacity(0.2) : AppColors.primary.withOpacity(0.1),
-                            child: Icon(Icons.person, color: isSelected ? Colors.white : AppColors.primary, size: 20),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  child['name'],
-                                  style: TextStyle(color: isSelected ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 12),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  child['assigned_stop'] ?? 'No Stop',
-                                  style: TextStyle(color: isSelected ? Colors.white.withOpacity(0.8) : AppColors.textSecondary, fontSize: 10),
-                                ),
-                              ],
-                            ),
-                          )
-                        ],
-                      ),
+            child: _children.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No children linked',
+                      style: TextStyle(color: Colors.grey),
                     ),
-                  );
-                },
-              ),
+                  )
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _children.length,
+                    itemBuilder: (context, index) {
+                      final child = _children[index];
+                      final isSelected = _trackingChildName == child['name'];
+                      return GestureDetector(
+                        onTap: () => _startTracking(child),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          width: 140,
+                          margin: const EdgeInsets.only(right: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primary
+                                : Colors.white.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: isSelected
+                                    ? Colors.white.withOpacity(0.2)
+                                    : AppColors.primary.withOpacity(0.1),
+                                child: Icon(
+                                  Icons.person,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.primary,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      child['name'],
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : AppColors.textPrimary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      child['assigned_stop'] ?? 'No Stop',
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white.withOpacity(0.8)
+                                            : AppColors.textSecondary,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -250,7 +387,11 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
             children: [
               Text(
                 'TRACKING: $_trackingChildName',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: AppColors.primary,
+                ),
               ),
               const StatusBadge(status: BusStatus.moving),
             ],

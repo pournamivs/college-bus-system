@@ -1,8 +1,14 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import json
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Trackmybus API")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -76,7 +82,7 @@ async def websocket_endpoint(websocket: WebSocket, bus_id: str):
                 payload['eta'] = eta_data
                 data = json.dumps(payload)
 
-            await manager.broadcast_bus(bus_id, data, exclude=websocket)
+            await manager.broadcast_bus(bus_id, data)
     except WebSocketDisconnect:
         manager.disconnect_bus(websocket, bus_id)
     finally:

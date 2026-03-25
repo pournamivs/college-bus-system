@@ -1,0 +1,49 @@
+Running Gradle task 'assembleRelease'...                        
+lib/features/student/payments/student_payment_screen.dart:94:3: Error: Expected a declaration, but got '}'.
+  }
+  ^
+lib/features/student/payments/student_payment_screen.dart:127:1: Error: Expected a declaration, but got '}'.
+}
+^
+lib/features/student/payments/student_payment_screen.dart:15:7: Error: The non-abstract class '_StudentPaymentScreenState' is missing implementations for these members:
+ - State.build
+Try to either
+ - provide an implementation,
+ - inherit an implementation from a superclass or mixin,
+ - mark the class as abstract, or
+ - provide a 'noSuchMethod' implementation.
+class _StudentPaymentScreenState extends State<StudentPaymentScreen> {
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/C:/flutter/packages/flutter/lib/src/widgets/framework.dart:1461:10: Context: 'State.build' is defined here.
+  Widget build(BuildContext context);
+         ^^^^^
+lib/features/student/payments/student_payment_screen.dart:100:13: Error: Undefined name '_isLoading'.
+      body: _isLoading 
+            ^^^^^^^^^^
+lib/features/student/payments/student_payment_screen.dart:104:24: Error: Undefined name '_fines'.
+            itemCount: _fines.length,
+                       ^^^^^^
+lib/features/student/payments/student_payment_screen.dart:106:25: Error: Undefined name '_fines'.
+              final f = _fines[i];
+                        ^^^^^^
+lib/features/student/payments/student_payment_screen.dart:117:42: Error: Method not found: '_payFine'.
+                        onPressed: () => _payFine(f),
+                                         ^^^^^^^^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildRelease'.
+> Process 'command 'C:\flutter\bin\flutter.bat'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 14s
+Running Gradle task 'assembleRelease'...                           14.5s
+Gradle task assembleRelease failed with exit code 1

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:location/location.dart';
 
 class StudentDashboard extends StatefulWidget {
+  const StudentDashboard({super.key});
+
   @override
-  _StudentDashboardState createState() => _StudentDashboardState();
+  State<StudentDashboard> createState() => _StudentDashboardState();
 }
 
 class _StudentDashboardState extends State<StudentDashboard> {
-  Location _location = Location();
   String _currentLocation = 'Unknown';
   String _eta = 'loading...';
 
@@ -19,15 +19,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Future<void> _getCurrentLocation() async {
-    final LocationData locationData = await _location.getLocation();
+    await Future<void>.delayed(const Duration(milliseconds: 400));
     setState(() {
-      _currentLocation = '\${locationData.latitude}, \${locationData.longitude}';
+      _currentLocation = '10.0276, 76.3084';
     });
   }
 
   Future<void> _getETA() async {
     // Dummy ETA for demonstration purposes
-    await Future.delayed(Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 2));
     setState(() {
       _eta = '15 minutes';
     });
@@ -35,13 +35,16 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   void _sos() {
     // Logic for SOS button (e.g., send an alert)
-    print('SOS Alert Sent!');
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('SOS Alert Sent!')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Student Dashboard'),),
+      appBar: AppBar(title: const Text('Student Dashboard')),
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
@@ -54,15 +57,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: <Widget>[
-                    Text('Current Location: $_currentLocation', style: TextStyle(fontSize: 18)),
-                    SizedBox(height: 10),
-                    Text('ETA: $_eta', style: TextStyle(fontSize: 18)),
-                    SizedBox(height: 20),
+                    Text('Current Location: $_currentLocation', style: const TextStyle(fontSize: 18)),
+                    const SizedBox(height: 10),
+                    Text('ETA: $_eta', style: const TextStyle(fontSize: 18)),
+                    const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: _sos,
-                      child: Text('SOS'),
+                      child: const Text('SOS'),
                       style: ElevatedButton.styleFrom(
-                        primary: Colors.red,
+                        backgroundColor: Colors.red,
                       ),
                     ),
                   ],

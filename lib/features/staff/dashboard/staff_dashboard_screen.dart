@@ -28,17 +28,39 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   LatLng _busLocation = const LatLng(10.0276, 76.3084);
   ConnectionStatus _connectionStatus = ConnectionStatus.disconnected;
   Map<String, dynamic>? _etaData;
+  String? _busIdString;
   StreamSubscription? _dataSub;
   StreamSubscription? _statusSub;
 
   @override
   void initState() {
     super.initState();
-    _initWS();
+    _fetchAndConnectBus();
+  }
+
+  Future<void> _fetchAndConnectBus() async {
+    final token = await _authService.getToken();
+    try {
+      // In a real app, staff might manage multiple buses. For demo, we fetch one.
+      final res = await http.get(
+        Uri.parse('${ApiConstants.apiBaseUrl}/api/driver/my-bus'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        _busIdString = data['id'].toString();
+        _initWS();
+      }
+    } catch (e) {
+      _busIdString = '102';
+      _initWS();
+    }
   }
 
   void _initWS() {
-    _wsService.connect('102'); // Example Fleet Bus
+    if (_busIdString == null) return;
+    _wsService.connect(_busIdString!);
+ // Example Fleet Bus
     _statusSub = _wsService.statusStream.listen((status) {
       if (mounted) setState(() => _connectionStatus = status);
     });
@@ -197,7 +219,17 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
+                  CustomGradientButton(
+                    text: 'ATTENDANCE OVERRIDE',
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Manual Attendance Override Triggered')),
+                      );
+                    },
+                    icon: Icons.edit_calendar_rounded,
+                  ),
+                  const SizedBox(height: 12),
                   CustomGradientButton(
                     text: 'Send Route Alert',
                     onPressed: () {},

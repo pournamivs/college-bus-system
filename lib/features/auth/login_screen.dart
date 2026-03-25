@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../../core/services/auth_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/constants/api_constants.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/brand_logo.dart';
 import '../../core/widgets/glass_morphic_card.dart';
 import '../../core/widgets/custom_gradient_button.dart';
 
@@ -44,6 +41,10 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (data != null) {
+        if (data['error'] != null) {
+          setState(() => _errorMessage = data['error'].toString());
+          return;
+        }
         if (!mounted) return;
         
         final String role = data['user']['role'].toLowerCase();
@@ -55,12 +56,12 @@ class _LoginScreenState extends State<LoginScreen> {
         else context.go('/student');
       } else {
         setState(() {
-          _errorMessage = 'Invalid credentials for $_role';
+          _errorMessage = 'Invalid credentials for $_role.';
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Connection Error: Check if backend is running.';
+        _errorMessage = 'Connection error. Check internet, backend, and BASE_URL.';
       });
       debugPrint("LOGIN ERROR: $e");
     } finally {
@@ -91,14 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 20),
                 // Logo Area
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.directions_bus_rounded, size: 70, color: Colors.white),
-                ),
+                const BrandLogo(size: 108),
                 const SizedBox(height: 24),
                 const Text(
                   'TrackMyBus',
@@ -150,6 +144,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
                 _buildDemoCredentials(),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => context.go('/register'),
+                  child: const Text(
+                    "Don't have an account? Register",
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                ),
                 const SizedBox(height: 20),
               ],
             ),

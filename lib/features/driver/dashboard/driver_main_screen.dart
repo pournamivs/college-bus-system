@@ -14,6 +14,8 @@ import '../../../core/services/websocket_service.dart';
 import '../../../core/services/auth_service.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/constants/api_constants.dart';
+import '../../shared/role_feature_panel.dart';
+import '../../shared/role_feature_catalog.dart';
 
 class DriverMainScreen extends StatefulWidget {
   const DriverMainScreen({super.key});
@@ -25,12 +27,14 @@ class DriverMainScreen extends StatefulWidget {
 class _DriverMainScreenState extends State<DriverMainScreen> {
   final WebSocketService _wsService = WebSocketService();
   final AuthService _authService = AuthService();
-  
+
   bool _isTripStarted = false;
+  bool _isTripPaused = false;
   StreamSubscription<Position>? _positionStream;
   LatLng _currentLocation = const LatLng(10.0276, 76.3084);
   Map<String, dynamic>? _assignedBus;
   String _statusMessage = 'Fetching assigned bus...';
+  int _passengerCount = 0;
 
   @override
   void initState() {
@@ -68,14 +72,36 @@ class _DriverMainScreenState extends State<DriverMainScreen> {
     }
   }
 
+  void _togglePause() {
+    if (!_isTripStarted) return;
+    setState(() {
+      _isTripPaused = !_isTripPaused;
+      _statusMessage = _isTripPaused
+          ? 'Trip Paused'
+          : 'Broadcasting Location...';
+    });
+  }
+
   final LocationService _locationService = LocationService();
 
   Future<void> _startTrip() async {
     final hasPermission = await _locationService.checkPermissions();
-    if (!hasPermission) return;
-    
+    if (!hasPermission) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Location permission/service is required. Please enable GPS.',
+          ),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isTripStarted = true;
+      _isTripPaused = false;
       _statusMessage = 'Broadcasting Location...';
     });
 
@@ -84,12 +110,14 @@ class _DriverMainScreenState extends State<DriverMainScreen> {
 
     _positionStream = _locationService.getPositionStream().listen((position) {
       if (mounted) {
+        if (_isTripPaused) return;
         setState(() {
           _currentLocation = LatLng(position.latitude, position.longitude);
         });
         _wsService.send({
           'lat': position.latitude,
           'lng': position.longitude,
+          'speed': position.speed,
           'timestamp': DateTime.now().toIso8601String(),
         });
       }
@@ -101,8 +129,91 @@ class _DriverMainScreenState extends State<DriverMainScreen> {
     _wsService.disconnect();
     setState(() {
       _isTripStarted = false;
+      _isTripPaused = false;
       _statusMessage = 'Trip Ended';
     });
+  }
+
+  Future<void> _showMaintenanceReportDialog() async {
+    String issueType = 'engine';
+    final noteCtrl = TextEditingController();
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Maintenance Report'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DropdownButtonFormField<String>(
+              initialValue: issueType,
+              items: const [
+                DropdownMenuItem(value: 'engine', child: Text('Engine')),
+                DropdownMenuItem(value: 'fuel', child: Text('Fuel')),
+                DropdownMenuItem(value: 'delay', child: Text('Delay')),
+              ],
+              onChanged: (value) => issueType = value ?? 'engine',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: noteCtrl,
+              decoration: const InputDecoration(hintText: 'Describe issue'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final token = await _authService.getToken();
+              try {
+                await http.post(
+                  Uri.parse(
+                    '${ApiConstants.apiBaseUrl}/api/driver/maintenance',
+                  ),
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer $token',
+                  },
+                  body: jsonEncode({
+                    'bus_id': _assignedBus?['id'] ?? 102,
+                    'driver_id':
+                        0, // Backend will use current user ideally, or we can send it here.
+                    'issue_description':
+                        '${issueType.toUpperCase()}: ${noteCtrl.text}',
+                  }),
+                );
+              } catch (e) {
+                debugPrint('Maintenance report submission failed: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Failed to submit report. Please try again.',
+                      ),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
+                return;
+              }
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Report submitted: $issueType'),
+                    backgroundColor: AppColors.warning,
+                  ),
+                );
+              }
+            },
+            child: const Text('Submit'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -122,7 +233,10 @@ class _DriverMainScreenState extends State<DriverMainScreen> {
             ),
             child: IconButton(
               icon: const Icon(Icons.logout, color: AppColors.error),
-              onPressed: () => context.go('/login'),
+              onPressed: () async {
+                await AuthService().logout();
+                if (context.mounted) context.go('/login');
+              },
             ),
           ),
         ],
@@ -157,7 +271,11 @@ class _DriverMainScreenState extends State<DriverMainScreen> {
                             shape: BoxShape.circle,
                           ),
                         ),
-                        const Icon(Icons.directions_bus, color: AppColors.primary, size: 35),
+                        const Icon(
+                          Icons.directions_bus,
+                          color: AppColors.primary,
+                          size: 35,
+                        ),
                       ],
                     ),
                   ),
@@ -165,7 +283,7 @@ class _DriverMainScreenState extends State<DriverMainScreen> {
               ),
             ],
           ),
-          
+
           // Floating Controls Area
           Positioned(
             bottom: 24,
@@ -184,24 +302,84 @@ class _DriverMainScreenState extends State<DriverMainScreen> {
                         children: [
                           Text(
                             _assignedBus?['name'] ?? 'Bus Not Assigned',
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            _statusMessage, 
+                            _statusMessage,
                             style: TextStyle(
-                              color: _isTripStarted ? AppColors.success : AppColors.textSecondary,
+                              color: _isTripStarted
+                                  ? AppColors.success
+                                  : AppColors.textSecondary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                       StatusBadge(
-                        status: _isTripStarted ? BusStatus.moving : BusStatus.offline,
+                        status: _isTripStarted
+                            ? (_isTripPaused
+                                  ? BusStatus.delayed
+                                  : BusStatus.moving)
+                            : BusStatus.offline,
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _togglePause,
+                          icon: Icon(
+                            _isTripPaused
+                                ? Icons.play_arrow_rounded
+                                : Icons.pause_rounded,
+                          ),
+                          label: Text(_isTripPaused ? 'Resume' : 'Pause'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _showMaintenanceReportDialog,
+                          icon: const Icon(Icons.build_circle_outlined),
+                          label: const Text('Report'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => setState(
+                          () => _passengerCount = (_passengerCount - 1).clamp(
+                            0,
+                            999,
+                          ),
+                        ),
+                        icon: const Icon(Icons.remove_circle_outline),
+                      ),
+                      Text(
+                        'Passenger Count: $_passengerCount',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      IconButton(
+                        onPressed: () => setState(() => _passengerCount += 1),
+                        icon: const Icon(Icons.add_circle_outline),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const RoleFeaturePanel(
+                    role: AppRole.driver,
+                    title: 'Driver Feature Readiness',
+                  ),
+                  const SizedBox(height: 16),
                   CustomGradientButton(
                     text: _isTripStarted ? 'STOP TRIP' : 'START TRIP',
                     onPressed: _toggleTrip,
