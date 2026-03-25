@@ -27,8 +27,8 @@ class AuthService {
             Uri.parse('$baseUrl/api/auth/login'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
+            body: jsonEncode({
               'username': username,
-              'email': username,
               'password': password,
             }),
           )

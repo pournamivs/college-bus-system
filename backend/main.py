@@ -33,8 +33,8 @@ app.include_router(student.router, prefix="/api/student", tags=["Student"])
 app.include_router(emergency.router, prefix="/api/emergency", tags=["Emergency"])
 
 @app.get("/")
-def read_root():
-    return {"message": "Welcome to Trackmybus API"}
+def root():
+    return {"status": "running", "api": "Trackmybus API"}
 
 @app.websocket("/ws/bus/{bus_id}")
 async def websocket_endpoint(websocket: WebSocket, bus_id: str):
