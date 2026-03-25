@@ -1,9 +1,10 @@
 fastapi
 uvicorn
 sqlalchemy
-pydantic
+pydantic[email]
 python-jose[cryptography]
 passlib[bcrypt]
+email-validator
 websockets
 python-multipart
 firebase-admin
