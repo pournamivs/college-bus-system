@@ -37,14 +37,14 @@ class AuthService {
         final data = jsonDecode(response.body);
         await _storeSession(data);
         return data;
+      } else {
+        final errorMsg = jsonDecode(response.body)['detail'] ?? 'Server error: ${response.statusCode}';
+        return {'error': errorMsg};
       }
     } catch (e) {
       debugPrint('AuthService login failed: $e');
+      return {'error': 'Connection failed: $e'};
     }
-
-    return {
-      'error': 'Cannot connect to server. Please check your internet connection.',
-    };
   }
 
   Future<void> _storeSession(Map<String, dynamic> data) async {
