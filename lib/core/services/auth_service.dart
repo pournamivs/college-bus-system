@@ -32,7 +32,7 @@ class AuthService {
               'password': password,
             }),
           )
-            .timeout(const Duration(seconds: 90));
+            .timeout(const Duration(seconds: 120));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

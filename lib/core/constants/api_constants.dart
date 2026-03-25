@@ -1,18 +1,15 @@
 class ApiConstants {
-  // ✅ PRODUCTION BACKEND
+  // ✅ HARDCODED PRODUCTION BACKEND (Final Lockdown)
   static const String apiBaseUrl = "https://trackmybus-backend.onrender.com";
 
-  // ✅ WebSocket URL (auto-derived from apiBaseUrl)
+  // ✅ WebSocket URL (wss:// for Render)
   static String get wsBaseUrl {
-    if (apiBaseUrl.startsWith('https://')) {
-      return apiBaseUrl.replaceFirst('https://', 'wss://');
-    }
-    return apiBaseUrl.replaceFirst('http://', 'ws://');
+    return "wss://trackmybus-backend.onrender.com";
   }
 
-  // Obsolete candidates (removed for performance)
+  // Obsolete candidates (removed for extreme performance)
   static const List<String> candidateApiBaseUrls = [apiBaseUrl];
   
-  // Obsolete setter (removed for security)
+  // Obsolete setter (removed for demo stability)
   static void setApiBaseUrl(String url) {}
 }
