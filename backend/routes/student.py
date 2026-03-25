@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 import models, schemas
+from .auth import get_current_user
 
 router = APIRouter()
 
@@ -37,7 +38,6 @@ def mark_attendance(attendance: schemas.AttendanceCreate, db: Session = Depends(
 def get_attendance(db: Session = Depends(get_db)):
     return db.query(models.Attendance).all()
 
-from routes.auth import get_current_user
 
 @router.get("/fines")
 def get_fines(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):

@@ -4,7 +4,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/constants/app_theme.dart';
 import 'core/router.dart';
 import 'core/services/notification_service.dart';
-import 'core/services/discovery_service.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -24,7 +23,6 @@ void main() async {
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     await NotificationService().initialize();
-    await DiscoveryService.discoverApi();
   } catch (e) {
     debugPrint("Init error: $e");
   }

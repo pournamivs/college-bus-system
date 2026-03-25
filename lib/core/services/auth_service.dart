@@ -19,52 +19,32 @@ class AuthService {
 
   Future<Map<String, dynamic>?> login(String email, String password) async {
     final username = email.trim();
+    final baseUrl = ApiConstants.apiBaseUrl;
 
-    for (final baseUrl in ApiConstants.candidateApiBaseUrls) {
-      try {
-        final response = await http
-            .post(
-              Uri.parse('$baseUrl/api/auth/login'),
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({
-                'username': username,
-                'email': username,
-                'password': password,
-              }),
-            )
-            .timeout(const Duration(seconds: 8));
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/auth/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'username': username,
+              'email': username,
+              'password': password,
+            }),
+          )
+            .timeout(const Duration(seconds: 90));
 
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          ApiConstants.setApiBaseUrl(baseUrl);
-          await _storeSession(data);
-          return data;
-        }
-      } catch (e) {
-        debugPrint('AuthService login attempt failed for $baseUrl: $e');
-      }
-    }
-
-    // Fallback to demo accounts for local testing if remote auth is unavailable.
-    if (_demoAccounts.containsKey(username.toLowerCase())) {
-      final demo = _demoAccounts[username.toLowerCase()];
-      if (demo != null && demo['password'] == password) {
-        final data = {
-          'access_token': 'demo_token_${username.toLowerCase()}',
-          'user': {
-            'username': username,
-            'role': demo['role'],
-            'name': demo['name'],
-          },
-        };
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
         await _storeSession(data);
         return data;
       }
+    } catch (e) {
+      debugPrint('AuthService login failed: $e');
     }
 
     return {
-      'error':
-          'Cannot login. Check backend is running and reachable on your network.',
+      'error': 'Cannot connect to server. Please check your internet connection.',
     };
   }
 
