@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import '../constants/api_constants.dart';
+// Removed ApiConstants import
 
 enum ConnectionStatus { connected, disconnected, connecting }
 
@@ -37,7 +37,8 @@ class WebSocketService {
     _currentStatus = ConnectionStatus.connecting;
 
     try {
-      final url = '${ApiConstants.wsBaseUrl}/ws/bus/bus_$_currentBusId';
+      const wsBaseUrl = 'wss://your-firebase-func-or-ws-server.com';
+      final url = '$wsBaseUrl/ws/bus/bus_$_currentBusId';
       _channel = WebSocketChannel.connect(Uri.parse(url));
       
       _currentStatus = ConnectionStatus.connected;

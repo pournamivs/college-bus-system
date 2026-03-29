@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import '../../../core/constants/app_colors.dart';
+import '../../../core/services/firestore_service.dart';
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../core/constants/api_constants.dart';
 
 class AdminRoutesScreen extends StatefulWidget {
   const AdminRoutesScreen({super.key});
@@ -12,7 +11,8 @@ class AdminRoutesScreen extends StatefulWidget {
 }
 
 class _AdminRoutesScreenState extends State<AdminRoutesScreen> {
-  List<dynamic> _routes = [];
+  final FirestoreService _firestoreService = FirestoreService();
+  List<Map<String, dynamic>> _routes = [];
   bool _isLoading = true;
 
   @override
@@ -24,15 +24,7 @@ class _AdminRoutesScreenState extends State<AdminRoutesScreen> {
   Future<void> _fetchRoutes() async {
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
-      final res = await http.get(
-        Uri.parse('${ApiConstants.apiBaseUrl}/api/admin/routes'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      if (res.statusCode == 200) {
-        setState(() => _routes = jsonDecode(res.body));
-      }
+      _routes = await _firestoreService.getAllRoutes();
     } catch (e) {
       debugPrint('Error fetching routes: $e');
     }
@@ -58,17 +50,11 @@ class _AdminRoutesScreenState extends State<AdminRoutesScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CANCEL')),
           ElevatedButton(
             onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              final token = prefs.getString('token');
               try {
-                await http.post(
-                  Uri.parse('${ApiConstants.apiBaseUrl}/api/admin/routes'),
-                  headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
-                  body: jsonEncode({
-                    'name': nameCtrl.text,
-                    'stops': stopsCtrl.text,
-                  }),
-                );
+                final List<dynamic> stopsJson = jsonDecode(stopsCtrl.text);
+                final List<Map<String, dynamic>> stops = stopsJson.cast<Map<String, dynamic>>();
+                
+                await _firestoreService.addRoute(nameCtrl.text, stops);
                 _fetchRoutes();
                 if (mounted) Navigator.pop(ctx);
               } catch (e) {

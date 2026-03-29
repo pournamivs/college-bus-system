@@ -1,44 +1,32 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../constants/app_colors.dart';
-import '../constants/api_constants.dart';
 import '../services/auth_service.dart';
 import '../services/location_service.dart';
+import '../services/firestore_service.dart';
+import '../constants/app_colors.dart';
 
 class SOSButton extends StatelessWidget {
   const SOSButton({super.key});
 
   Future<void> _sendSOSAlert(BuildContext context) async {
     try {
-      final token = await AuthService().getToken();
-      final pos = await LocationService().getCurrentPosition();
+      final uid = await AuthService().getUid();
+      if (uid == null) return;
       
-      final res = await http.post(
-        Uri.parse('${ApiConstants.apiBaseUrl}/api/emergency/trigger'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'latitude': pos?.latitude ?? 10.0276,
-          'longitude': pos?.longitude ?? 76.3084,
-          'alert_type': 'safety',
-        }),
+      final pos = await LocationService().getCurrentPosition();
+      await FirestoreService().reportSOS(
+        uid,
+        pos?.latitude ?? 10.0276,
+        pos?.longitude ?? 76.3084,
       );
       
-      if (res.statusCode == 200 || res.statusCode == 201) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('SOS ALERT SENT WITH LIVE LOCATION', style: TextStyle(fontWeight: FontWeight.bold)),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      } else {
-        throw Exception('Failed to send SOS');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('SOS ALERT SENT WITH LIVE LOCATION', style: TextStyle(fontWeight: FontWeight.bold)),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     } catch (e) {
       if (context.mounted) {

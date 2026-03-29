@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/api_constants.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/services/firestore_service.dart';
 
 class AdminEmergenciesScreen extends StatefulWidget {
   const AdminEmergenciesScreen({super.key});
@@ -13,7 +10,8 @@ class AdminEmergenciesScreen extends StatefulWidget {
 }
 
 class _AdminEmergenciesScreenState extends State<AdminEmergenciesScreen> {
-  List<dynamic> _alerts = [];
+  final FirestoreService _firestoreService = FirestoreService();
+  List<Map<String, dynamic>> _alerts = [];
   bool _isLoading = true;
 
   @override
@@ -25,15 +23,7 @@ class _AdminEmergenciesScreenState extends State<AdminEmergenciesScreen> {
   Future<void> _fetchAlerts() async {
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
-      final res = await http.get(
-        Uri.parse('${ApiConstants.apiBaseUrl}/api/emergency/'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      if (res.statusCode == 200) {
-        setState(() => _alerts = jsonDecode(res.body));
-      }
+      _alerts = await _firestoreService.getAllAlerts();
     } catch (e) {
       debugPrint('Error fetching alerts: $e');
     }
@@ -61,10 +51,17 @@ class _AdminEmergenciesScreenState extends State<AdminEmergenciesScreen> {
                 borderOnForeground: true,
                 child: ListTile(
                   leading: const Icon(Icons.warning, color: AppColors.error),
-                  title: Text('SOS from Role: ${a['user_role']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Status: ${a['status']} | Type: ${a['alert_type']}\nLocation: ${a['latitude']}, ${a['longitude']}'),
+                  title: Text('SOS from User ID: ${a['userId']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text('Status: ${a['status']} | Type: ${a['type']}\nLocation: ${a['latitude']}, ${a['longitude']}'),
                   trailing: ElevatedButton(
-                    onPressed: () {}, // Backend resolve logic 
+                    onPressed: () async {
+                      try {
+                        await _firestoreService.resolveAlert(a['id']);
+                        _fetchAlerts();
+                      } catch (e) {
+                        debugPrint('Error resolving alert: $e');
+                      }
+                    },
                     child: const Text('RESOLVE'),
                   ),
                 ),

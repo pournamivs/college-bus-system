@@ -1,0 +1,20 @@
+Analyzing college-bus-system...                                 
+
+warning - Duplicate import - lib\core\router.dart:21:8 - duplicate_import
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\core\services\firestore_service.dart:43:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\core\services\firestore_service.dart:44:7 - use_null_aware_elements
+  error - The name 'updateBusLocation' is already defined - lib\core\services\firestore_service.dart:106:16 - duplicate_definition
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:294:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:320:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:340:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:355:43 - unnecessary_cast
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\buses\admin_bus_drilldown_screen.dart:15:26 - unused_field
+   info - The parameter name 'sum' matches a visible type name - lib\features\admin\buses\admin_bus_drilldown_screen.dart:72:46 - avoid_types_as_parameter_names
+   info - The parameter name 'sum' matches a visible type name - lib\features\admin\buses\admin_bus_drilldown_screen.dart:73:44 - avoid_types_as_parameter_names
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\payments\admin_payment_list_screen.dart:15:26 - unused_field
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\payments\admin_payments_screen.dart:14:26 - unused_field
+warning - The value of the field '_isProcessing' isn't used - lib\features\admin\staff\admin_staff_management_screen.dart:19:8 - unused_field
+warning - The value of the field '_firestoreService' isn't used - lib\features\student\student_dashboard.dart:21:26 - unused_field
+warning - The value of the field '_permissionsGranted' isn't used - lib\features\student\student_dashboard.dart:28:8 - unused_field
+   info - The import of 'dart:ui' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\main.dart:11:8 - unnecessary_import
+

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/constants/app_theme.dart';
+import 'core/constants/app_colors.dart';
 import 'core/router.dart';
+import 'bus_tracking/main_app.dart';
 import 'core/services/notification_service.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,7 +29,7 @@ void main() async {
     debugPrint("Init error: $e");
   }
   
-  runApp(const ProviderScope(child: TrackMyBusApp()));
+  runApp(const CollegeBusApp());
 }
 
 class TrackMyBusApp extends StatelessWidget {
@@ -39,6 +41,15 @@ class TrackMyBusApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'TrackMyBus',
       theme: AppTheme.lightTheme,
+      darkTheme: ThemeData.dark().copyWith(
+        primaryColor: AppColors.primary,
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1E1E1E),
+          foregroundColor: Colors.white,
+        ),
+      ),
+      themeMode: ThemeMode.system,
       routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
     );

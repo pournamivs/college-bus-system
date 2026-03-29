@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:track_my_bus/core/constants/app_colors.dart';
-import 'package:track_my_bus/features/admin/dashboard/admin_dashboard_screen.dart';
-import 'package:track_my_bus/features/admin/students/admin_students_screen.dart';
-import 'package:track_my_bus/features/admin/drivers/admin_drivers_screen.dart';
-import 'package:track_my_bus/features/admin/fees/admin_fees_screen.dart';
-import 'package:track_my_bus/features/admin/settings/admin_settings_screen.dart';
-import 'package:track_my_bus/features/admin/payments/admin_payments_screen.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/services/firestore_service.dart';
+import '../../../core/services/auth_service.dart';
+import 'admin_dashboard_screen.dart';
+import 'admin_live_tracking_screen.dart';
+import '../students/admin_students_screen.dart';
+import '../drivers/admin_drivers_screen.dart';
+import '../fees/admin_fees_screen.dart';
+import '../settings/admin_settings_screen.dart';
+import '../payments/admin_payments_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({super.key});
@@ -20,7 +23,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
   final List<Widget> _screens = [
     const AdminDashboardScreen(),
     const AdminUsersScreen(),
-    const AdminMapScreen(),
+    const AdminLiveTrackingScreen(),
     const AdminEmergenciesScreen(),
     const AdminRoutesScreen(),
     const AdminPaymentsScreen(),

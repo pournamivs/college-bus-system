@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/services/auth_service.dart';
-import '../../core/constants/app_colors.dart';
-import '../../core/widgets/brand_logo.dart';
-import '../../core/widgets/glass_morphic_card.dart';
-import '../../core/widgets/custom_gradient_button.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,18 +12,48 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
-  String _role = 'Student';
+  final _phoneController = TextEditingController();
+  final _otpController = TextEditingController();
+
   bool _isLoading = false;
   String? _errorMessage;
+  bool _otpSent = false;
+  String? _verificationId;
+  String _selectedRole = 'Student';
 
-  final AuthService _authService = AuthService();
+  final List<String> _roles = ['Student', 'Driver', 'Admin'];
 
-  void _login() async {
-    if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
-      setState(() => _errorMessage = 'Please enter both username and password');
+  // Format phone number strictly to E.164 Indian format
+  String _formatPhoneNumber(String phone) {
+    phone = phone.trim();
+    phone = phone.replaceAll(RegExp(r'[\s\-]'), '');
+
+    if (phone.startsWith('+91')) {
+      return phone;
+    }
+
+    if (phone.startsWith('0')) {
+      phone = phone.substring(1);
+    }
+
+    return '+91$phone';
+  }
+
+  Future<void> _sendCode() async {
+    final rawPhone = _phoneController.text.trim();
+    if (rawPhone.isEmpty) {
+      setState(() => _errorMessage = 'Please enter your phone number');
+      return;
+    }
+
+    final formattedPhone = _formatPhoneNumber(rawPhone);
+
+    final digitsOnly = formattedPhone.replaceFirst('+91', '');
+    if (digitsOnly.length != 10 || int.tryParse(digitsOnly) == null) {
+      setState(
+        () =>
+            _errorMessage = 'Invalid phone number. Must be exactly 10 digits.',
+      );
       return;
     }
 
@@ -35,37 +63,131 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final data = await _authService.login(
-        _usernameController.text,
-        _passwordController.text,
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: formattedPhone,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          await _signInWithCredential(credential);
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = e.message ?? 'Verification failed';
+          });
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          setState(() {
+            _isLoading = false;
+            _otpSent = true;
+            _verificationId = verificationId;
+          });
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          _verificationId = verificationId;
+        },
       );
-
-      if (data != null) {
-        if (data['error'] != null) {
-          setState(() => _errorMessage = data['error'].toString());
-          return;
-        }
-        if (!mounted) return;
-        
-        final String role = data['user']['role'].toLowerCase();
-        if (role == 'admin') context.go('/admin');
-        else if (role == 'driver') context.go('/driver');
-        else if (role == 'staff') context.go('/staff');
-        else if (role == 'parent') context.go('/parent');
-        else if (role == 'student') context.go('/student');
-        else context.go('/student');
-      } else {
+    } catch (e) {
+      if (mounted) {
         setState(() {
-          _errorMessage = 'Invalid credentials for $_role.';
+          _isLoading = false;
+          _errorMessage = 'Failed to send OTP: $e';
         });
       }
+    }
+  }
+
+  Future<void> _verifyOTP() async {
+    if (_verificationId == null) return;
+    final otp = _otpController.text.trim();
+    if (otp.isEmpty) {
+      setState(() => _errorMessage = 'Please enter the OTP');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
+        smsCode: otp,
+      );
+      await _signInWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Invalid OTP or session expired. Please try again.';
+      });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Connection error. Check internet, backend, and BASE_URL.';
+        _isLoading = false;
+        _errorMessage = 'Verification error: $e';
       });
-      debugPrint("LOGIN ERROR: $e");
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _signInWithCredential(PhoneAuthCredential credential) async {
+    try {
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
+      final user = userCredential.user;
+
+      if (user != null) {
+        String phoneNumber =
+            user.phoneNumber ?? _formatPhoneNumber(_phoneController.text);
+
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('phone', isEqualTo: phoneNumber)
+            .get();
+
+        if (querySnapshot.docs.isEmpty) {
+          await FirebaseAuth.instance.signOut();
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+              _errorMessage = 'Access denied. Account not found.';
+            });
+          }
+          return;
+        }
+
+        final userData = querySnapshot.docs.first.data();
+        final role = (userData['role'] ?? '').toString().toLowerCase();
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('uid', user.uid);
+        await prefs.setString('role', role);
+        await prefs.setString('name', (userData['name'] ?? 'User').toString());
+
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+
+        if (role == 'admin') {
+          context.go('/admin');
+        } else if (role == 'driver') {
+          context.go('/driver');
+        } else if (role == 'student') {
+          context.go('/student');
+        } else {
+          await FirebaseAuth.instance.signOut();
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+              _errorMessage = 'Invalid role configuration. Contact admin.';
+            });
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Login failed. Please try again.';
+        });
+      }
     }
   }
 
@@ -77,187 +199,406 @@ class _LoginScreenState extends State<LoginScreen> {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              AppColors.primary,
-              Color(0xFF4C1D95), // Deeper Purple
+              Color(0xFF8A77F2), // Lighter purple top
+              Color(0xFFC7B1F6), // Light purplish middle
+              Color(0xFFE9E5F9), // Very light purple bottom
             ],
+            stops: [0.0, 0.4, 1.0],
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                // Logo Area
-                const BrandLogo(size: 108),
-                const SizedBox(height: 24),
-                const Text(
-                  'TrackMyBus',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2),
-                ),
-                const Text(
-                  'Manage Your Daily Commute',
-                  style: TextStyle(fontSize: 16, color: Colors.white70),
-                ),
-                const SizedBox(height: 48),
-                
-                GlassMorphicCard(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Welcome Back',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 32),
-                      _buildTextField(
-                        controller: _usernameController,
-                        label: 'Username / Email',
-                        icon: Icons.person_outline,
-                      ),
-                      const SizedBox(height: 20),
-                      _buildTextField(
-                        controller: _passwordController,
-                        label: 'Password',
-                        icon: Icons.lock_outline,
-                        isPassword: true,
-                        obscureText: _obscurePassword,
-                        onTogglePassword: () => setState(() => _obscurePassword = !_obscurePassword),
-                      ),
-                      const SizedBox(height: 20),
-                      _buildRoleDropdown(),
-                      if (_errorMessage != null) ...[
-                        const SizedBox(height: 16),
-                        Text(_errorMessage!, style: const TextStyle(color: AppColors.error, fontSize: 13, fontWeight: FontWeight.w500)),
-                      ],
-                      const SizedBox(height: 32),
-                      CustomGradientButton(
-                        text: 'LOGIN',
-                        isLoading: _isLoading,
-                        onPressed: _login,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-                _buildDemoCredentials(),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () => context.go('/register'),
-                  child: const Text(
-                    "Don't have an account? Register",
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDemoCredentials() {
-    return GlassMorphicCard(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          bottom: false,
+          child: Column(
             children: [
-              const Icon(Icons.info_outline, size: 16, color: AppColors.primary),
-              const SizedBox(width: 8),
-              Text(
-                'Demo Logins (Click to use)',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.purple.shade900,
+              const SizedBox(height: 50),
+              // Logo and Title Section
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.directions_bus,
+                  size: 50,
+                  color: Color(0xFF5A2A9B), // Dark purple
+                ),
+              ),
+              const SizedBox(height: 16),
+              RichText(
+                text: const TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'SNCCE ',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF4A148C),
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                    TextSpan(
+                      text: 'College Bus Tracking',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Color(0xFF4A148C),
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
+              
+              // Main White Card
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(40),
+                      topRight: Radius.circular(40),
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Login now text
+                        Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const Text(
+                                'Login ',
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E265C),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Row(
+                                  children: [
+                                    const Text(
+                                      'n',
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w400,
+                                        color: Color(0xFF2E265C),
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.location_on_outlined,
+                                      size: 18,
+                                      color: Color(0xFF5A2A9B),
+                                    ),
+                                    const Text(
+                                      'w',
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w400,
+                                        color: Color(0xFF2E265C),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+
+                        // Select Role Dropdown
+                        const Text(
+                          'Select Role',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2E265C),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          value: _selectedRole,
+                          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF2E265C)),
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(
+                              Icons.person,
+                              color: Color(0xFF5A2A9B),
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF5A2A9B)),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          ),
+                          items: _roles.map((String role) {
+                            return DropdownMenuItem(
+                              value: role,
+                              child: Text(
+                                role,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0xFF5A5A5A),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                _selectedRole = newValue;
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Phone Number Field
+                        const Text(
+                          'Phone Number',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2E265C),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          maxLength: 10,
+                          decoration: InputDecoration(
+                            hintText: 'Enter phone number',
+                            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 16),
+                            counterText: '',
+                            prefixIconConstraints: const BoxConstraints(minWidth: 80),
+                            prefixIcon: Container(
+                              padding: const EdgeInsets.only(left: 12, right: 8),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.phone_in_talk, size: 20, color: Color(0xFF5A5A5A)),
+                                  const SizedBox(width: 4),
+                                  const Text(
+                                    '+91',
+                                    style: TextStyle(
+                                      color: Color(0xFF5A5A5A),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    height: 24,
+                                    width: 1,
+                                    color: Colors.grey.shade300,
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                              ),
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF5A2A9B)),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 20),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // OTP Boxes
+                        if (!_otpSent) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: List.generate(
+                              6,
+                              (index) => Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFAFAFA),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey.shade300),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ] else ...[
+                          TextField(
+                            controller: _otpController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              letterSpacing: 24,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            decoration: InputDecoration(
+                              counterText: '',
+                              labelText: 'OTP',
+                              hintText: '',
+                              floatingLabelAlignment: FloatingLabelAlignment.center,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Color(0xFF5A2A9B)),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 20),
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _otpSent = false;
+                                  _otpController.clear();
+                                  _errorMessage = null;
+                                });
+                              },
+                              child: const Text(
+                                'Change Phone Number',
+                                style: TextStyle(
+                                  color: Color(0xFF5A2A9B),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 32),
+
+                        // Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _isLoading
+                                ? null
+                                : (_otpSent ? _verifyOTP : _sendCode),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF6A1B9A), // Deep purple from image
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(
+                                    _otpSent ? 'Verify & Login' : 'Send Verification Code',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Terms text
+                        const Center(
+                          child: Text(
+                            'By signing in, you agree to our Terms & Privacy Policy',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF5A5A5A),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 48),
+
+                        // Bottom indicators
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildDot(false),
+                            _buildDot(false),
+                            _buildDot(true), // Active dot in middle as per image
+                            _buildDot(false),
+                            _buildDot(false),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-          const Divider(height: 24),
-          _demoItem('Admin', 'admin', 'Admin@2026', 'admin'),
-          _demoItem('Driver', 'driver1', 'driver123', 'driver'),
-          _demoItem('Student', 'student1', 'pass123', 'student'),
-          _demoItem('Staff', 'staff1', 'staff123', 'staff'),
-          _demoItem('Parent', 'parent1', 'parent123', 'parent'),
-        ],
-      ),
-    );
-  }
-
-  Widget _demoItem(String title, String user, String pass, String role) {
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _usernameController.text = user;
-          _passwordController.text = pass;
-          _role = title;
-        });
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black)),
-            Text('$user / $pass', style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
-          ],
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    bool isPassword = false,
-    bool obscureText = false,
-    VoidCallback? onTogglePassword,
-  }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: AppColors.primary),
-        suffixIcon: isPassword 
-          ? IconButton(
-              icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility, color: AppColors.textSecondary),
-              onPressed: onTogglePassword,
-            )
-          : null,
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.5),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      ),
-    );
-  }
-
-  Widget _buildRoleDropdown() {
+  Widget _buildDot(bool isActive) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      width: 8,
+      height: 8,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButtonFormField<String>(
-          value: _role,
-          decoration: const InputDecoration(border: InputBorder.none),
-          items: ['Student', 'Admin', 'Driver', 'Staff', 'Parent']
-              .map((role) => DropdownMenuItem(value: role, child: Text(role)))
-              .toList(),
-          onChanged: (value) => setState(() => _role = value!),
-        ),
+        shape: BoxShape.circle,
+        color: isActive ? const Color(0xFF9C7EE5) : const Color(0xFFE2D9F3),
       ),
     );
   }

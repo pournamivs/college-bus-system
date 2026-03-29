@@ -1,11 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/firestore_service.dart';
+import '../../../core/constants/app_colors.dart';
 
-class StudentProfileScreen extends StatelessWidget {
+class StudentProfileScreen extends StatefulWidget {
   const StudentProfileScreen({super.key});
 
   @override
+  State<StudentProfileScreen> createState() => _StudentProfileScreenState();
+}
+
+class _StudentProfileScreenState extends State<StudentProfileScreen> {
+  final AuthService _authService = AuthService();
+  final FirestoreService _firestoreService = FirestoreService();
+  Map<String, dynamic>? _userData;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final uid = await _authService.getUid();
+    if (uid != null) {
+      final doc = await _firestoreService.getUser(uid);
+      if (doc.exists) setState(() => _userData = doc.data() as Map<String, dynamic>);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_userData == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: SingleChildScrollView(
@@ -39,8 +67,8 @@ class StudentProfileScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('RAHUL KUMAR', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                        const Text('Roll No CS1234', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        Text((_userData!['name']?.toUpperCase() ?? 'STUDENT'), style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text('Role: ${_userData!['role']?.toUpperCase() ?? 'STUDENT'}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
                       ],
                     ),
                   ),
@@ -266,6 +294,34 @@ class StudentProfileScreen extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Parent Info Card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.family_restroom, color: AppColors.primary, size: 30),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Parent Contact:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text('${_userData!['parent_name'] ?? 'Not Added'}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text('Phone: ${_userData!['parent_phone'] ?? 'N/A'}', style: const TextStyle(color: Colors.blueGrey, fontSize: 13)),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 20),

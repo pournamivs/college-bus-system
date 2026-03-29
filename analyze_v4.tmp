@@ -1,0 +1,31 @@
+Analyzing college-bus-system...                                 
+
+warning - Duplicate import - lib\core\router.dart:21:8 - duplicate_import
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\core\services\firestore_service.dart:43:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\core\services\firestore_service.dart:44:7 - use_null_aware_elements
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:278:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:304:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:324:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:339:43 - unnecessary_cast
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\buses\admin_bus_drilldown_screen.dart:15:26 - unused_field
+   info - The parameter name 'sum' matches a visible type name - lib\features\admin\buses\admin_bus_drilldown_screen.dart:72:46 - avoid_types_as_parameter_names
+   info - The parameter name 'sum' matches a visible type name - lib\features\admin\buses\admin_bus_drilldown_screen.dart:73:44 - avoid_types_as_parameter_names
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\payments\admin_payment_list_screen.dart:15:26 - unused_field
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\payments\admin_payments_screen.dart:14:26 - unused_field
+warning - The value of the field '_isProcessing' isn't used - lib\features\admin\staff\admin_staff_management_screen.dart:19:8 - unused_field
+  error - Target of URI doesn't exist: '../../shared/role_feature_catalog.dart' - lib\features\admin\students\admin_students_screen.dart:5:8 - uri_does_not_exist
+  error - The method 'updateBusStatus' isn't defined for the type 'FirestoreService' - lib\features\driver\driver_dashboard.dart:88:29 - undefined_method
+  error - The method 'updateBusStatus' isn't defined for the type 'FirestoreService' - lib\features\driver\driver_dashboard.dart:115:31 - undefined_method
+  error - Target of URI doesn't exist: 'student_dashboard_screen.dart' - lib\features\student\dashboard\student_main_screen.dart:3:8 - uri_does_not_exist
+  error - Target of URI doesn't exist: '../tracking/student_tracking_screen.dart' - lib\features\student\dashboard\student_main_screen.dart:4:8 - uri_does_not_exist
+  error - The name 'StudentDashboardScreen' isn't a class - lib\features\student\dashboard\student_main_screen.dart:19:11 - creation_with_non_type
+  error - The name 'StudentTrackingScreen' isn't a class - lib\features\student\dashboard\student_main_screen.dart:20:11 - creation_with_non_type
+   info - The imported package 'permission_handler' isn't a dependency of the importing package - lib\features\student\student_dashboard.dart:6:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:permission_handler/permission_handler.dart' - lib\features\student\student_dashboard.dart:6:8 - uri_does_not_exist
+warning - The value of the field '_firestoreService' isn't used - lib\features\student\student_dashboard.dart:21:26 - unused_field
+warning - The value of the field '_permissionsGranted' isn't used - lib\features\student\student_dashboard.dart:28:8 - unused_field
+  error - Undefined name 'Permission' - lib\features\student\student_dashboard.dart:43:26 - undefined_identifier
+  error - The property 'value' can't be accessed on the type 'IconData' in a constant expression - lib\features\student\student_dashboard.dart:148:39 - const_eval_property_access
+  error - The getter 'value' isn't defined for the type 'IconData' - lib\features\student\student_dashboard.dart:148:58 - undefined_getter
+   info - The import of 'dart:ui' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\main.dart:11:8 - unnecessary_import
+

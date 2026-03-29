@@ -1,0 +1,95 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAdmin() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isDriver() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'driver';
+    }
+
+    function isStudent() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'student';
+    }
+
+    function getUserBusId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.busId;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      // Students can only read/write their own data
+      allow read, write: if isStudent() && request.auth.uid == userId;
+      // Drivers can only read/write their own data
+      allow read, write: if isDriver() && request.auth.uid == userId;
+      // Admins have full access
+      allow read, write: if isAdmin();
+    }
+
+    // Bus Locations Collection
+    match /bus_locations/{busId} {
+      // Drivers can only update locations for their assigned bus
+      allow read, write: if isDriver() && getUserBusId() == busId;
+      // Students can read bus locations for their assigned bus
+      allow read: if isStudent() && getUserBusId() == busId;
+      // Admins have full access
+      allow read, write: if isAdmin();
+    }
+
+    // Buses Collection
+    match /buses/{busId} {
+      // Authenticated users can read bus data
+      allow read: if request.auth != null;
+      // Only admins can modify bus data
+      allow write: if isAdmin();
+    }
+
+    // Attendance Collection
+    match /attendance/{document=**} {
+      // Students can read their own attendance
+      allow read: if isStudent() && resource.data.studentId == request.auth.uid;
+      // Drivers can read/write attendance for students on their bus
+      allow read, write: if isDriver() && getUserBusId() == resource.data.busId;
+      // Admins have full access
+      allow read, write: if isAdmin();
+    }
+
+    // Payments Collection
+    match /payments/{document=**} {
+      // Students can read their own payments
+      allow read: if isStudent() && resource.data.studentId == request.auth.uid;
+      // Admins have full access
+      allow read, write: if isAdmin();
+    }
+
+    // Complaints Collection
+    match /complaints/{document=**} {
+      // Users can read/write their own complaints
+      allow read, write: if request.auth.uid == resource.data.userId;
+      // Admins have full access
+      allow read, write: if isAdmin();
+    }
+
+    // Maintenance Collection
+    match /maintenance/{document=**} {
+      // Drivers can create maintenance requests for their bus
+      allow read, write: if isDriver() && getUserBusId() == resource.data.busId;
+      // Admins have full access
+      allow read, write: if isAdmin();
+    }
+
+    // SOS Collection
+    match /sos/{document=**} {
+      // Users can create SOS alerts
+      allow write: if request.auth != null;
+      // Admins can read all SOS alerts
+      allow read: if isAdmin();
+    }
+  }
+}

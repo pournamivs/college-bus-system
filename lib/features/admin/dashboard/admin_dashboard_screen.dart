@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/api_constants.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/services/firestore_service.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/glass_morphic_card.dart';
 import '../../../core/widgets/custom_gradient_button.dart';
-import '../../shared/role_feature_panel.dart';
-import '../../shared/role_feature_catalog.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -18,98 +15,51 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  bool _isLoading = false;
-  List<dynamic> _buses = [];
-  List<dynamic> _drivers = [];
-  List<dynamic> _maintenance = [];
-  List<dynamic> _alerts = [];
+  final FirestoreService _firestoreService = FirestoreService();
+  final AuthService _authService = AuthService();
+  
+  bool _isLoading = true;
+  Map<String, dynamic> _financialStats = {};
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    _loadStats();
   }
 
-  Future<void> _fetchData() async {
+  Future<void> _loadStats() async {
     setState(() => _isLoading = true);
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    final stats = await _firestoreService.getAdminFinancialStats();
+    setState(() {
+      _financialStats = stats;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _seedBuses() async {
+    setState(() => _isLoading = true);
     try {
-      final busRes = await http.get(
-        Uri.parse('${ApiConstants.apiBaseUrl}/api/admin/buses'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      final driverRes = await http.get(
-        Uri.parse('${ApiConstants.apiBaseUrl}/api/admin/drivers'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      final maintRes = await http.get(
-        Uri.parse('${ApiConstants.apiBaseUrl}/api/admin/maintenance'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      final alertRes = await http.get(
-        Uri.parse('${ApiConstants.apiBaseUrl}/api/admin/emergency'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      
-      if (busRes.statusCode == 200 && driverRes.statusCode == 200) {
-        setState(() {
-          _buses = jsonDecode(busRes.body);
-          _drivers = jsonDecode(driverRes.body);
-          if (maintRes.statusCode == 200) _maintenance = jsonDecode(maintRes.body);
-          if (alertRes.statusCode == 200) _alerts = jsonDecode(alertRes.body);
-        });
+      final db = FirebaseFirestore.instance.collection('buses');
+      for (int i = 1; i <= 10; i++) {
+        await db.doc(i.toString()).set({
+          'name': 'Bus $i',
+          'capacity': 50,
+          'status': 'offline',
+          'currentTripId': null,
+          'driverId': null,
+        }, SetOptions(merge: true));
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Buses 1 to 10 Seeded Successfully!')));
       }
     } catch (e) {
-      debugPrint("Admin fetch error: $e");
-    } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Seeding Failed: $e')));
+      }
     }
-  }
-
-  void _showCreateUserDialog(String role) {
-    final nameCtrl = TextEditingController();
-    final emailCtrl = TextEditingController();
-    final passwordCtrl = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Add New ${role.toUpperCase()}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Full Name')),
-            TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Username')),
-            TextField(controller: passwordCtrl, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CANCEL')),
-          ElevatedButton(
-            onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              final token = prefs.getString('token');
-              final res = await http.post(
-                Uri.parse('${ApiConstants.apiBaseUrl}/api/auth/register'),
-                headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
-                body: jsonEncode({
-                  'name': nameCtrl.text,
-                  'email': emailCtrl.text,
-                  'password': passwordCtrl.text,
-                  'role': role.toLowerCase(),
-                }),
-              );
-              if (res.statusCode == 200 || res.statusCode == 201) {
-                _fetchData();
-                if (mounted) Navigator.pop(ctx);
-              }
-            },
-            child: const Text('CREATE'),
-          )
-        ],
-      ),
-    );
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -118,157 +68,169 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchData),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadStats),
+          IconButton(
+            icon: const Icon(Icons.password),
+            tooltip: 'Change Password',
+            onPressed: () => context.push('/change-password'),
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: AppColors.error),
             onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.clear();
-              if (context.mounted) context.go('/login');
+              await _authService.logout();
+              if (mounted) context.go('/login');
             },
           ),
         ],
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Overview',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
+        : RefreshIndicator(
+            onRefresh: _loadStats,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildFinancialOverview(),
+                  const SizedBox(height: 32),
+                  const Text('Vehicle Tracking', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  CustomGradientButton(
+                    text: 'LIVE MONITOR ON MAP',
+                    icon: Icons.map_outlined,
+                    onPressed: () => context.push('/admin/tracking'),
+                  ),
+                  const SizedBox(height: 32),
+                  const Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Row(
                     children: [
-                      _buildStatCard('Students', '12', Icons.school, AppColors.primary),
-                      _buildStatCard('Buses', '${_buses.length}', Icons.directions_bus, AppColors.success),
-                      _buildStatCard('Drivers', '${_drivers.length}', Icons.person, AppColors.warning),
-                      _buildStatCard('Alerts', '${_alerts.length}', Icons.warning_amber_rounded, AppColors.error),
+                      Expanded(child: _actionButton('Payments', Icons.payments_outlined, () => context.push('/admin/payments'))),
+                      const SizedBox(width: 12),
+                      Expanded(child: _actionButton('Users', Icons.people_outline, () => context.push('/admin/users'))),
                     ],
                   ),
-                ),
-                const SizedBox(height: 32),
-                const Text(
-                  'User Management',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: CustomGradientButton(text: 'Add Student', onPressed: () => _showCreateUserDialog('student'))),
-                    const SizedBox(width: 12),
-                    Expanded(child: CustomGradientButton(text: 'Add Driver', onPressed: () => _showCreateUserDialog('driver'))),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                const RoleFeaturePanel(
-                  role: AppRole.admin,
-                  title: 'Admin Feature Readiness',
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Fleet Overview',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                if (_buses.isEmpty) const Center(child: Text('No buses registered')),
-                ..._buses.map((bus) => Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.black.withOpacity(0.05)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: _actionButton('Manage Buses', Icons.directions_bus, () => Navigator.pushNamed(context, '/admin/buses'))),
+                    ],
                   ),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.directions_bus, color: AppColors.primary),
-                    ),
-                    title: Text('${bus['name']} (${bus['number_plate']})', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('Driver: ${bus['driver_name'] ?? 'Unassigned'}'),
-                    trailing: const Icon(Icons.edit_note_rounded, color: AppColors.primary),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: _actionButton('Emergencies', Icons.warning_amber_rounded, () => context.push('/admin/emergencies'))),
+                      const SizedBox(width: 12),
+                      Expanded(child: _actionButton('Drivers', Icons.drive_eta, () => context.push('/admin/drivers'))),
+                    ],
                   ),
-                )),
-                const SizedBox(height: 32),
-                const Text(
-                  'Critical Alerts & SOS',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.error),
-                ),
-                const SizedBox(height: 12),
-                if (_alerts.isEmpty) const Text('No active alerts'),
-                ..._alerts.map((alert) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.error.withOpacity(0.2)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: _actionButton('Maintenance', Icons.build_circle_outlined, () => context.push('/admin/maintenance'))),
+                      const SizedBox(width: 12),
+                      Expanded(child: _actionButton('Staff CRM', Icons.badge_outlined, () => context.push('/admin/staff'))),
+                    ],
                   ),
-                  child: ListTile(
-                    leading: const Icon(Icons.emergency, color: AppColors.error),
-                    title: Text('SOS: ${alert['alert_type'].toString().toUpperCase()}'),
-                    subtitle: Text('ID: ${alert['user_id']} | Bus: ${alert['bus_id'] ?? 'N/A'}'),
-                    trailing: Text(alert['status'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: _actionButton('Seed Buses', Icons.upload_file, _seedBuses)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _actionButton('Reports', Icons.bar_chart, () => context.push('/admin/reports'))),
+                    ],
                   ),
-                )),
-                const SizedBox(height: 32),
-                const Text(
-                  'Maintenance Reports',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                if (_maintenance.isEmpty) const Text('No pending reports'),
-                ..._maintenance.map((m) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListTile(
-                    leading: const Icon(Icons.build, color: AppColors.primary),
-                    title: Text(m['issue_description']),
-                    subtitle: Text('Bus ID: ${m['bus_id']} | Status: ${m['status']}'),
-                  ),
-                )),
-              ],
+                  const SizedBox(height: 32),
+                  const Text('Active Fleet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  _buildFleetList(),
+                ],
+              ),
             ),
           ),
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildFinancialOverview() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Financial Overview', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(child: _statCard('FEES RECEIVED', '₹${_financialStats['totalReceived']?.toStringAsFixed(0) ?? '0'}', AppColors.success)),
+            const SizedBox(width: 12),
+            Expanded(child: _statCard('PENDING DUES', '₹${_financialStats['totalPending']?.toStringAsFixed(0) ?? '0'}', AppColors.error)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _statCard('TOTAL PENALTY COLLECTED', '₹${_financialStats['totalPenalty']?.toStringAsFixed(0) ?? '0'}', AppColors.warning, isWide: true),
+      ],
+    );
+  }
+
+  Widget _statCard(String label, String value, Color color, {bool isWide = false}) {
     return GlassMorphicCard(
-      width: 140,
-      padding: const EdgeInsets.all(16),
-      borderRadius: 20,
-      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 16),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-          ),
+          Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+          const SizedBox(height: 8),
+          Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
         ],
       ),
+    );
+  }
+
+  Widget _actionButton(String label, IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: AppColors.primary),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFleetList() {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _firestoreService.streamBuses(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        final buses = snapshot.data!;
+        if (buses.isEmpty) return const Text('No buses registered.');
+        
+        return Column(
+          children: buses.map((bus) => Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: ListTile(
+              onTap: () => context.push('/admin/buses/${bus['id']}'),
+              leading: const Icon(Icons.directions_bus, color: AppColors.primary),
+              title: Text('Bus ${bus['number'] ?? 'N/A'}'),
+              subtitle: Text('Status: ${bus['status']?.toUpperCase() ?? 'OFFLINE'}'),
+              trailing: Icon(
+                Icons.circle, 
+                color: bus['status'] == 'active' ? AppColors.success : Colors.grey,
+                size: 12,
+              ),
+            ),
+          )).toList(),
+        );
+      },
     );
   }
 }

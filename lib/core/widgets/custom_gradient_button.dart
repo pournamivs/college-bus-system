@@ -6,6 +6,7 @@ class CustomGradientButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool isLoading;
   final IconData? icon;
+  final List<Color>? colors;
 
   const CustomGradientButton({
     super.key,
@@ -13,6 +14,7 @@ class CustomGradientButton extends StatelessWidget {
     this.onPressed,
     this.isLoading = false,
     this.icon,
+    this.colors,
   });
 
   @override
@@ -22,7 +24,7 @@ class CustomGradientButton extends StatelessWidget {
       height: 56,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
+          colors: colors ?? [
             AppColors.primary,
             AppColors.primaryLight,
           ],
@@ -32,7 +34,7 @@ class CustomGradientButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: (colors?.first ?? AppColors.primary).withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),

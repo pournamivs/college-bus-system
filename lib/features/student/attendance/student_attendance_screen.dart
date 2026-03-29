@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/stat_card.dart';
+import '../../../core/services/firestore_service.dart';
+import '../../../core/services/auth_service.dart';
 
 class StudentAttendanceScreen extends StatefulWidget {
   const StudentAttendanceScreen({super.key});
@@ -11,131 +13,142 @@ class StudentAttendanceScreen extends StatefulWidget {
 }
 
 class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
+  final FirestoreService _firestoreService = FirestoreService();
+  final AuthService _authService = AuthService();
+  
   DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
+  Map<DateTime, String> _attendanceMap = {};
+  bool _isLoading = true;
+  String? _uid;
 
-  // Dummy attendance data
-  final Map<DateTime, String> _attendanceMap = {
-    DateTime.now().subtract(const Duration(days: 1)): 'Present',
-    DateTime.now().subtract(const Duration(days: 2)): 'Absent',
-    DateTime.now().subtract(const Duration(days: 3)): 'Late',
-  };
+  @override
+  void initState() {
+    super.initState();
+    _loadAttendance();
+  }
+
+  Future<void> _loadAttendance() async {
+    _uid = await _authService.getUid();
+    if (_uid != null && mounted) {
+      _firestoreService.streamAttendanceRecords(_uid!).listen((snapshot) {
+        if (!mounted) return;
+        Map<DateTime, String> newMap = {};
+        for (var doc in snapshot.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          final dateStr = doc.id; // YYYY-MM-DD
+          try {
+            final date = DateTime.parse(dateStr);
+            // Normalize to UTC midnight for table_calendar
+            final normalizedDate = DateTime.utc(date.year, date.month, date.day);
+            newMap[normalizedDate] = data['status'] ?? 'absent';
+          } catch (e) {
+            debugPrint('Date parse err: $e');
+          }
+        }
+        setState(() {
+          _attendanceMap = newMap;
+          _isLoading = false;
+        });
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Attendance', style: TextStyle(color: AppColors.textPrimary)),
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        title: const Text('My Attendance'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Summary Cards
-            Row(
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
               children: [
-                Expanded(child: StatCard(label: 'Present Days', value: '45', icon: Icons.check_circle, backgroundColor: AppColors.success)),
-                Expanded(child: StatCard(label: 'Absent Days', value: '5', icon: Icons.cancel, backgroundColor: AppColors.error)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)),
-              child: Column(
-                children: [
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Overall Attendance', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('90%', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
-                    ],
+                TableCalendar(
+                  firstDay: DateTime.utc(2023, 1, 1),
+                  lastDay: DateTime.utc(2030, 12, 31),
+                  focusedDay: _focusedDay,
+                  calendarFormat: CalendarFormat.month,
+                  headerStyle: const HeaderStyle(
+                    formatButtonVisible: false,
+                    titleCentered: true,
                   ),
-                  const SizedBox(height: 8),
-                  LinearProgressIndicator(
-                    value: 0.9,
-                    backgroundColor: AppColors.divider,
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                    minHeight: 8,
-                    borderRadius: BorderRadius.circular(4),
+                  calendarBuilders: CalendarBuilders(
+                    defaultBuilder: (context, day, focusedDay) {
+                      return _buildCell(day);
+                    },
+                    todayBuilder: (context, day, focusedDay) {
+                      return _buildCell(day, isToday: true);
+                    },
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Calendar
-            const Text('Monthly View', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: TableCalendar(
-                firstDay: DateTime.utc(2020, 10, 16),
-                lastDay: DateTime.utc(2030, 3, 14),
-                focusedDay: _focusedDay,
-                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                onDaySelected: (selectedDay, focusedDay) {
-                  setState(() {
-                    _selectedDay = selectedDay;
+                  onPageChanged: (focusedDay) {
                     _focusedDay = focusedDay;
-                  });
-                },
-                calendarBuilders: CalendarBuilders(
-                  markerBuilder: (context, date, events) {
-                    // Match dummy data ignoring time
-                    final matchingKey = _attendanceMap.keys.firstWhere(
-                      (k) => isSameDay(k, date),
-                      orElse: () => DateTime(1970),
-                    );
-                    
-                    if (matchingKey.year != 1970) {
-                      final status = _attendanceMap[matchingKey];
-                      Color dotColor = AppColors.success;
-                      if (status == 'Absent') dotColor = AppColors.error;
-                      if (status == 'Late') dotColor = AppColors.warning;
-                      
-                      return Positioned(
-                        bottom: 4,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor),
-                        ),
-                      );
-                    }
-                    return null;
                   },
                 ),
-                headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
-                calendarStyle: const CalendarStyle(todayDecoration: BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle)),
-              ),
+                const SizedBox(height: 32),
+                _buildLegend(),
+              ],
             ),
-            const SizedBox(height: 24),
+          ),
+    );
+  }
 
-            // Logs
-            const Text('Recent Logs', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: 3,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  leading: const Icon(Icons.history, color: AppColors.textSecondary),
-                  title: const Text('Biometric Punch-In'),
-                  subtitle: const Text('08:45 AM - Main Gate'),
-                  trailing: const Text('20 Mar 2026', style: TextStyle(fontSize: 12)),
-                );
-              },
-            ),
-          ],
+  Widget _buildCell(DateTime day, {bool isToday = false}) {
+    final normalizedDay = DateTime.utc(day.year, day.month, day.day);
+    final status = _attendanceMap[normalizedDay];
+    
+    Color bgColor = Colors.transparent;
+    Color textColor = Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black;
+
+    if (status == 'present') {
+      bgColor = AppColors.success.withOpacity(0.2);
+      textColor = AppColors.success;
+    } else if (status == 'absent') {
+      bgColor = AppColors.error.withOpacity(0.2);
+      textColor = AppColors.error;
+    }
+
+    if (isToday && status == null) {
+      bgColor = AppColors.primary.withOpacity(0.1);
+      textColor = AppColors.primary;
+    }
+
+    return Container(
+      margin: const EdgeInsets.all(4.0),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8.0),
+        border: isToday ? Border.all(color: AppColors.primary, width: 2) : null,
+      ),
+      child: Center(
+        child: Text(
+          '${day.day}',
+          style: TextStyle(color: textColor, fontWeight: isToday ? FontWeight.bold : FontWeight.normal),
         ),
       ),
+    );
+  }
+
+  Widget _buildLegend() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _legendItem('Present', AppColors.success),
+        _legendItem('Absent', AppColors.error),
+      ],
+    );
+  }
+
+  Widget _legendItem(String text, Color color) {
+    return Row(
+      children: [
+        Container(width: 16, height: 16, decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(4))),
+        const SizedBox(width: 8),
+        Text(text),
+      ],
     );
   }
 }

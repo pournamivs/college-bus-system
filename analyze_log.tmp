@@ -1,0 +1,18 @@
+Analyzing college-bus-system...                                 
+
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\core\services\firestore_service.dart:43:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\core\services\firestore_service.dart:44:7 - use_null_aware_elements
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:253:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:279:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:299:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:314:43 - unnecessary_cast
+  error - Target of URI doesn't exist: '../../core/constants/app_colors.dart' - lib\features\admin\dashboard\admin_main_screen.dart:2:8 - uri_does_not_exist
+  error - Undefined name 'AppColors' - lib\features\admin\dashboard\admin_main_screen.dart:38:28 - undefined_identifier
+  error - Undefined name 'AppColors' - lib\features\admin\dashboard\admin_main_screen.dart:39:30 - undefined_identifier
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\payments\admin_payment_list_screen.dart:15:26 - unused_field
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\payments\admin_payments_screen.dart:14:26 - unused_field
+   info - The private field _assignedStop could be 'final' - lib\features\student\dashboard\student_dashboard_screen.dart:37:10 - prefer_final_fields
+   info - The private field _geofenceNear could be 'final' - lib\features\student\dashboard\student_dashboard_screen.dart:39:8 - prefer_final_fields
+   info - The private field _studentStop could be 'final' - lib\features\student\tracking\student_tracking_screen.dart:28:10 - prefer_final_fields
+  error - Undefined name 'AppColors' - lib\main.dart:43:23 - undefined_identifier
+

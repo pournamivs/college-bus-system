@@ -1,0 +1,22 @@
+﻿Analyzing college-bus-system...                                 
+
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\core\services\firestore_service.dart:39:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\core\services\firestore_service.dart:40:7 - use_null_aware_elements
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:241:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:267:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:276:43 - unnecessary_cast
+  error - The method 'streamAllBuses' isn't defined for the type 'FirestoreService' - lib\features\admin\dashboard\admin_live_tracking_screen.dart:64:35 - undefined_method
+warning - Duplicate import - lib\features\admin\fees\admin_fees_screen.dart:4:8 - duplicate_import
+warning - Duplicate import - lib\features\admin\fees\admin_fees_screen.dart:5:8 - duplicate_import
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\payments\admin_payment_list_screen.dart:15:26 - unused_field
+warning - Duplicate import - lib\features\admin\payments\admin_payments_screen.dart:5:8 - duplicate_import
+warning - Duplicate import - lib\features\admin\settings\admin_settings_screen.dart:4:8 - duplicate_import
+warning - Duplicate import - lib\features\admin\students\admin_students_screen.dart:5:8 - duplicate_import
+  error - The named parameter 'email' is required, but there's no corresponding argument - lib\features\admin\students\admin_students_screen.dart:76:36 - missing_required_argument
+  error - The named parameter 'name' is required, but there's no corresponding argument - lib\features\admin\students\admin_students_screen.dart:76:36 - missing_required_argument
+  error - The named parameter 'password' is required, but there's no corresponding argument - lib\features\admin\students\admin_students_screen.dart:76:36 - missing_required_argument
+  error - The named parameter 'role' is required, but there's no corresponding argument - lib\features\admin\students\admin_students_screen.dart:76:36 - missing_required_argument
+  error - Too many positional arguments: 0 expected, but 4 found - lib\features\admin\students\admin_students_screen.dart:77:19 - extra_positional_arguments_could_be_named
+  error - The named parameter 'color' isn't defined - lib\features\driver\driver_dashboard.dart:131:15 - undefined_named_parameter
+   info - The private field _studentStop could be 'final' - lib\features\student\tracking\student_tracking_screen.dart:28:10 - prefer_final_fields
+
