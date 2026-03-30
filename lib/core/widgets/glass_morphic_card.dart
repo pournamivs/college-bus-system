@@ -41,7 +41,7 @@ class GlassMorphicCard extends StatelessWidget {
           child: Container(
             padding: padding ?? const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: color ?? AppColors.glassBase.withOpacity(opacity),
+              color: color ?? AppColors.glassBase.withValues(alpha: opacity),
               borderRadius: BorderRadius.circular(borderRadius),
               border: border ?? Border.all(
                 color: AppColors.glassBorder,

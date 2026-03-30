@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -20,6 +23,13 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { localProperties.load(it) }
+    }
+    val mapsApiKeyFromProps = localProperties.getProperty("MAPS_API_KEY") ?: "REPLACE_ME_WITH_API_KEY"
+
     defaultConfig {
         applicationId = "com.example.college_bus_system"
         minSdk = flutter.minSdkVersion
@@ -27,6 +37,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+        manifestPlaceholders["mapsApiKey"] = mapsApiKeyFromProps
     }
 
     buildTypes {

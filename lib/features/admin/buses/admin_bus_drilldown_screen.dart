@@ -12,7 +12,6 @@ class AdminBusDrilldownScreen extends StatefulWidget {
 }
 
 class _AdminBusDrilldownScreenState extends State<AdminBusDrilldownScreen> {
-  final FirestoreService _firestoreService = FirestoreService();
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   Map<String, dynamic>? _busData;
@@ -81,8 +80,8 @@ class _AdminBusDrilldownScreenState extends State<AdminBusDrilldownScreen> {
     }
 
     int pendingStudents = _students.where((s) => (s['pending_amount'] ?? 0) > 0).length;
-    double totalPending = _students.fold(0, (sum, s) => sum + ((s['pending_amount'] ?? 0) as num).toDouble());
-    double totalFines = _students.fold(0, (sum, s) => sum + ((s['penalty'] ?? 0) as num).toDouble());
+    double totalPending = _students.fold(0, (total, s) => total + ((s['pending_amount'] ?? 0) as num).toDouble());
+    double totalFines = _students.fold(0, (total, s) => total + ((s['penalty'] ?? 0) as num).toDouble());
 
     return Scaffold(
       appBar: AppBar(
@@ -149,9 +148,9 @@ class _AdminBusDrilldownScreenState extends State<AdminBusDrilldownScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

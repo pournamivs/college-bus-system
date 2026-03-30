@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../core/services/firestore_service.dart';
 import '../../../core/constants/app_colors.dart';
+import 'dart:async';
 
 class AdminMapScreen extends StatefulWidget {
   const AdminMapScreen({super.key});
@@ -13,6 +13,7 @@ class AdminMapScreen extends StatefulWidget {
 
 class _AdminMapScreenState extends State<AdminMapScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  final Completer<GoogleMapController> _controller = Completer();
 
   @override
   Widget build(BuildContext context) {
@@ -30,45 +31,32 @@ class _AdminMapScreenState extends State<AdminMapScreen> {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
-          final buses = snapshot.data ?? [];
           
-          return FlutterMap(
-            options: const MapOptions(
-              initialCenter: LatLng(10.0276, 76.3084),
-              initialZoom: 14.0,
+          final buses = snapshot.data ?? [];
+          final Set<Marker> markers = buses.map((bus) {
+            final lat = bus['currentLat'] as double? ?? 10.0276;
+            final lng = bus['currentLng'] as double? ?? 76.3084;
+            final name = bus['name'] as String? ?? 'Bus';
+            
+            return Marker(
+              markerId: MarkerId(bus['id'] ?? name),
+              position: LatLng(lat, lng),
+              infoWindow: InfoWindow(title: name),
+            );
+          }).toSet();
+          
+          return GoogleMap(
+            mapType: MapType.normal,
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(10.0276, 76.3084),
+              zoom: 14.0,
             ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.trackmybus.app',
-              ),
-              MarkerLayer(
-                markers: buses.map((bus) {
-                  return Marker(
-                    point: LatLng(bus['currentLat'] ?? 10.0276, bus['currentLng'] ?? 76.3084),
-                    width: 45,
-                    height: 45,
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(4),
-                            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
-                          ),
-                          child: Text(
-                            bus['name'] ?? 'Bus',
-                            style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        const Icon(Icons.directions_bus, color: AppColors.primary, size: 28),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
+            markers: markers,
+            onMapCreated: (GoogleMapController controller) {
+              if (!_controller.isCompleted) {
+                _controller.complete(controller);
+              }
+            },
           );
         },
       ),

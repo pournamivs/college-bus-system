@@ -42,8 +42,8 @@ class FirestoreService {
     await _db.collection('bus_locations').doc(normalizedBusId).set({
       'lat': lat,
       'lng': lng,
-      if (speed != null) 'speed': speed,
-      if (direction != null) 'direction': direction,
+      'speed': ?speed,
+      'direction': ?direction,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
@@ -52,8 +52,8 @@ class FirestoreService {
       'currentLng': lng,
       'latitude': lat,
       'longitude': lng,
-      if (speed != null) 'speed': speed,
-      if (direction != null) 'direction': direction,
+      'speed': ?speed,
+      'direction': ?direction,
       'lastLocationUpdate': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
@@ -346,7 +346,7 @@ class FirestoreService {
 
   Future<List<Map<String, dynamic>>> getAllPayments() async {
     final snapshot = await _db.collection('payments').orderBy('timestamp', descending: true).get();
-    return snapshot.docs.map((doc) => {...doc.data() as Map<String, dynamic>, 'id': doc.id}).toList();
+    return snapshot.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
   }
 
   Future<void> issueFine(String studentId, double amount, String reason) async {
@@ -372,7 +372,7 @@ class FirestoreService {
 
   Future<List<Map<String, dynamic>>> getAllAlerts() async {
     final snapshot = await _db.collection('alerts').orderBy('timestamp', descending: true).get();
-    return snapshot.docs.map((doc) => {...doc.data() as Map<String, dynamic>, 'id': doc.id}).toList();
+    return snapshot.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
   }
 
   Future<void> resolveAlert(String alertId) async {
@@ -392,7 +392,7 @@ class FirestoreService {
 
   Future<List<Map<String, dynamic>>> getAllRoutes() async {
     final snapshot = await _db.collection('routes').get();
-    return snapshot.docs.map((doc) => {...doc.data() as Map<String, dynamic>, 'id': doc.id}).toList();
+    return snapshot.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
   }
 
   Future<void> addRoute(String name, List<Map<String, dynamic>> stops) async {
@@ -407,7 +407,7 @@ class FirestoreService {
     final snapshot = await _db.collection('users')
         .where('parentIds', arrayContains: parentUid)
         .get();
-    return snapshot.docs.map((doc) => {...doc.data() as Map<String, dynamic>, 'id': doc.id}).toList();
+    return snapshot.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
   }
 
   Future<void> linkChildToParent(String parentUid, String studentEmail) async {

@@ -12,7 +12,7 @@ class AdminPaymentListScreen extends StatefulWidget {
 }
 
 class _AdminPaymentListScreenState extends State<AdminPaymentListScreen> {
-  final FirestoreService _firestoreService = FirestoreService();
+//  final FirestoreService _firestoreService = FirestoreService();
   String _filter = 'All'; // All, Paid, Pending, Overdue
   String _searchQuery = '';
 

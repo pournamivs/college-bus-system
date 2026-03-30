@@ -1,0 +1,21 @@
+﻿Analyzing college-bus-system...                                 
+
+   info - Don't invoke 'print' in production code - fix_opacity.dart:15:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\services\google_directions_service.dart:24:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\admin\admin_reports_screen.dart:85:7 - avoid_print
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\buses\admin_bus_drilldown_screen.dart:15:26 - unused_field
+   info - The parameter name 'sum' matches a visible type name - lib\features\admin\buses\admin_bus_drilldown_screen.dart:84:46 - avoid_types_as_parameter_names
+   info - The parameter name 'sum' matches a visible type name - lib\features\admin\buses\admin_bus_drilldown_screen.dart:85:44 - avoid_types_as_parameter_names
+warning - The value of the field '_mapController' isn't used - lib\features\admin\dashboard\admin_live_tracking_screen.dart:15:24 - unused_field
+warning - The value of the field '_markers' isn't used - lib\features\admin\dashboard\admin_live_tracking_screen.dart:16:31 - unused_field
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\payments\admin_payment_list_screen.dart:15:26 - unused_field
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\payments\admin_payments_screen.dart:14:26 - unused_field
+warning - The value of the field '_isProcessing' isn't used - lib\features\admin\staff\admin_staff_management_screen.dart:19:8 - unused_field
+   info - Don't invoke 'print' in production code - lib\features\driver\driver_attendance_screen.dart:49:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\driver\driver_attendance_screen.dart:74:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\driver\driver_attendance_screen.dart:100:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\driver\driver_attendance_screen.dart:128:7 - avoid_print
+warning - The value of the local variable 'isPresent' isn't used - lib\features\driver\driver_attendance_screen.dart:219:31 - unused_local_variable
+warning - The value of the field '_driverPhone' isn't used - lib\features\driver\driver_dashboard.dart:71:10 - unused_field
+   info - Don't invoke 'print' in production code - lib\features\driver\driver_profile_screen.dart:52:7 - avoid_print
+

@@ -82,7 +82,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading reports data: $e');
+      debugPrint('Error loading reports data: $e');
       setState(() => _isLoading = false);
     }
   }

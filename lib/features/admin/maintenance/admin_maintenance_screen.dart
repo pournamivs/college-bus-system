@@ -79,7 +79,7 @@ class _AdminMaintenanceScreenState extends State<AdminMaintenanceScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: data['role'] == 'driver' ? Colors.orange.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
+                              color: data['role'] == 'driver' ? Colors.orange.withValues(alpha: 0.2) : Colors.blue.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(

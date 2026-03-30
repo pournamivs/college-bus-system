@@ -16,7 +16,7 @@ class _AdminStaffManagementScreenState extends State<AdminStaffManagementScreen>
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  bool _isProcessing = false;
+//  bool _isProcessing = false;
 
   void _addStaff() async {
     final name = _nameController.text.trim();
@@ -24,7 +24,7 @@ class _AdminStaffManagementScreenState extends State<AdminStaffManagementScreen>
     
     if (name.isEmpty || email.isEmpty) return;
     
-    setState(() => _isProcessing = true);
+//    setState(() => _isProcessing = true);
     try {
       // In a real prod environment, you would call a Cloud Function to create the Firebase Auth user.
       // Since this is client-side admin, we assume the staff signs up and we approve, 
@@ -50,7 +50,7 @@ class _AdminStaffManagementScreenState extends State<AdminStaffManagementScreen>
         );
       }
     } finally {
-      if (mounted) setState(() => _isProcessing = false);
+//      if (mounted) setState(() => _isProcessing = false);
     }
   }
 

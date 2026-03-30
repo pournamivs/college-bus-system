@@ -43,7 +43,7 @@ class StudentNotificationsScreen extends StatelessWidget {
             child: ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: iconColor.withOpacity(0.1), shape: BoxShape.circle),
+                decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), shape: BoxShape.circle),
                 child: Icon(icon, color: iconColor),
               ),
               title: Text(type, style: const TextStyle(fontWeight: FontWeight.bold)),

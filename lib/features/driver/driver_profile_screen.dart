@@ -49,7 +49,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         }
       }
     } catch (e) {
-      print('Error loading driver profile: $e');
+      debugPrint('Error loading driver profile: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -86,7 +86,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                       children: [
                         CircleAvatar(
                           radius: 40,
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                           child: Text(
                             _driverData?['name']?.toString().substring(0, 1).toUpperCase() ?? 'D',
                             style: const TextStyle(
@@ -119,7 +119,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
+                                  color: AppColors.primary.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(

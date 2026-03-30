@@ -12,8 +12,8 @@ class AdminLiveTrackingScreen extends StatefulWidget {
 
 class _AdminLiveTrackingScreenState extends State<AdminLiveTrackingScreen> {
   final FirestoreService _firestoreService = FirestoreService();
-  GoogleMapController? _mapController;
-  final Map<MarkerId, Marker> _markers = {};
+//  GoogleMapController? _mapController;
+//  final Map<MarkerId, Marker> _markers = {};
 
   static const CameraPosition _initialPosition = CameraPosition(
     target: LatLng(12.9716, 77.5946), // Default to Bangalore or project location
@@ -21,7 +21,7 @@ class _AdminLiveTrackingScreenState extends State<AdminLiveTrackingScreen> {
   );
 
   void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
+//    _mapController = controller;
   }
 
   Set<Marker> _buildMarkers(List<Map<String, dynamic>> buses) {

@@ -115,7 +115,7 @@ class _AdminDriverManagementScreenState extends State<AdminDriverManagementScree
                   subtitle: Text('Bus: ${currentBus.isEmpty ? 'Unassigned' : currentBus}\nSalary: ₹$amount'),
                   trailing: Container(
                     decoration: BoxDecoration(
-                      color: isPaid ? AppColors.success.withOpacity(0.1) : AppColors.error.withOpacity(0.1),
+                      color: isPaid ? AppColors.success.withValues(alpha: 0.1) : AppColors.error.withValues(alpha: 0.1),
                     ),
                     child: Switch(
                       value: isPaid,

@@ -239,7 +239,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   void _showAddUserDialog() {
     final nameCtrl = TextEditingController();
     final emailCtrl = TextEditingController();
-    final passwordCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
     String role = 'student';
 
     showDialog(
@@ -270,8 +270,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               decoration: const InputDecoration(labelText: 'Username/Email'),
             ),
             TextField(
-              controller: passwordCtrl,
-              decoration: const InputDecoration(labelText: 'Password'),
+              controller: phoneCtrl,
+              decoration: const InputDecoration(labelText: 'Phone Number (e.g. 9876543210)'),
+              keyboardType: TextInputType.phone,
             ),
           ],
         ),
@@ -282,13 +283,23 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              try {
-                await _authService.register(
-                  email: emailCtrl.text,
-                  password: passwordCtrl.text,
-                  name: nameCtrl.text,
-                  role: role,
-                );
+                try {
+                  String formattedPhone = phoneCtrl.text.trim();
+                  if (!formattedPhone.startsWith('+91') && formattedPhone.length == 10) {
+                    formattedPhone = '+91$formattedPhone';
+                  }
+                  
+                  await FirebaseFirestore.instance.collection('users').add({
+                    'name': nameCtrl.text.trim(),
+                    'email': emailCtrl.text.trim(),
+                    'phone': formattedPhone,
+                    'role': role,
+                    'busId': '',
+                    'driverId': '',
+                    'route': '',
+                    'status': 'active',
+                    'createdAt': FieldValue.serverTimestamp(),
+                  });
                 _fetchUsers();
                 if (mounted) Navigator.pop(ctx);
               } catch (e) {

@@ -47,7 +47,7 @@ class _AdminEmergenciesScreenState extends State<AdminEmergenciesScreen> {
             itemBuilder: (ctx, i) {
               final a = _alerts[i];
               return Card(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 borderOnForeground: true,
                 child: ListTile(
                   leading: const Icon(Icons.warning, color: AppColors.error),

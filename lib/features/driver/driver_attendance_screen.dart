@@ -46,7 +46,7 @@ class _DriverAttendanceScreenState extends State<DriverAttendanceScreen> {
         }
       }
     } catch (e) {
-      print('Error loading driver data: $e');
+      debugPrint('Error loading driver data: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -71,7 +71,7 @@ class _DriverAttendanceScreenState extends State<DriverAttendanceScreen> {
 
       await _loadAttendanceForDate(_selectedDate);
     } catch (e) {
-      print('Error loading students: $e');
+      debugPrint('Error loading students: $e');
     }
   }
 
@@ -97,7 +97,7 @@ class _DriverAttendanceScreenState extends State<DriverAttendanceScreen> {
         _attendanceStatus = attendanceMap;
       });
     } catch (e) {
-      print('Error loading attendance: $e');
+      debugPrint('Error loading attendance: $e');
     }
   }
 
@@ -125,7 +125,7 @@ class _DriverAttendanceScreenState extends State<DriverAttendanceScreen> {
         ),
       );
     } catch (e) {
-      print('Error marking attendance: $e');
+      debugPrint('Error marking attendance: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to mark attendance'),
@@ -216,7 +216,6 @@ class _DriverAttendanceScreenState extends State<DriverAttendanceScreen> {
                       itemBuilder: (context, index) {
                         final student = _students[index];
                         final studentId = student['id'];
-                        final isPresent = _attendanceStatus[studentId] ?? false;
 
                         return GlassMorphicCard(
                           margin: const EdgeInsets.only(bottom: 12),
@@ -225,7 +224,7 @@ class _DriverAttendanceScreenState extends State<DriverAttendanceScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 24,
-                                backgroundColor: AppColors.primary.withOpacity(0.1),
+                                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                                 child: Text(
                                   student['name']?.toString().substring(0, 1).toUpperCase() ?? 'S',
                                   style: const TextStyle(

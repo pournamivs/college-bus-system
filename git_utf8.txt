@@ -1,0 +1,71 @@
+﻿On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   analyze_output.txt
+	modified:   final_analyze.txt
+	deleted:    lib/bus_tracking/main_app.dart
+	deleted:    lib/bus_tracking/screens/admin_screen.dart
+	deleted:    lib/bus_tracking/screens/driver_screen.dart
+	deleted:    lib/bus_tracking/screens/login_screen.dart
+	deleted:    lib/bus_tracking/screens/student_screen.dart
+	deleted:    lib/bus_tracking/services/location_service.dart
+	deleted:    lib/bus_tracking/services/notification_service.dart
+	modified:   lib/core/constants/app_colors.dart
+	modified:   lib/core/constants/app_theme.dart
+	modified:   lib/core/services/firestore_service.dart
+	modified:   lib/core/services/google_directions_service.dart
+	modified:   lib/core/widgets/brand_logo.dart
+	modified:   lib/core/widgets/custom_gradient_button.dart
+	modified:   lib/core/widgets/glass_morphic_card.dart
+	modified:   lib/core/widgets/stat_card.dart
+	modified:   lib/core/widgets/status_badge.dart
+	modified:   lib/core/widgets/status_chip.dart
+	deleted:    lib/features/admin/admin_sos_screen.dart
+	modified:   lib/features/admin/buses/admin_bus_drilldown_screen.dart
+	modified:   lib/features/admin/dashboard/admin_dashboard_screen.dart
+	modified:   lib/features/admin/dashboard/admin_main_screen.dart
+	modified:   lib/features/admin/drivers/admin_driver_management_screen.dart
+	modified:   lib/features/admin/drivers/admin_drivers_screen.dart
+	modified:   lib/features/admin/fees/admin_fees_screen.dart
+	modified:   lib/features/admin/maintenance/admin_maintenance_screen.dart
+	modified:   lib/features/admin/payments/admin_payments_screen.dart
+	modified:   lib/features/auth/login_screen.dart
+	modified:   lib/features/auth/register_screen.dart
+	modified:   lib/features/driver/driver_attendance_screen.dart
+	modified:   lib/features/driver/driver_dashboard.dart
+	modified:   lib/features/driver/driver_profile_screen.dart
+	modified:   lib/features/driver/salary/driver_salary_screen.dart
+	modified:   lib/features/student/attendance/student_attendance_screen.dart
+	modified:   lib/features/student/notifications/student_notifications_screen.dart
+	modified:   lib/features/student/profile/student_profile_screen.dart
+	modified:   lib/features/student/student_dashboard.dart
+	modified:   lib/main.dart
+	modified:   lib/widgets/glass_morphic_card.dart
+	modified:   macos/Flutter/GeneratedPluginRegistrant.swift
+	modified:   pubspec.lock
+	modified:   pubspec.yaml
+	modified:   windows/flutter/generated_plugin_registrant.cc
+	modified:   windows/flutter/generated_plugins.cmake
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	analyze_output2.txt
+	analyze_output2_utf8.txt
+	analyze_output_utf8.txt
+	analyze_utf8.txt
+	college-bus-system/
+	final_analyze_utf8.txt
+	final_analyzer.txt
+	final_analyzer3.txt
+	final_analyzer3_utf8.txt
+	final_analyzer_utf8.txt
+	fix_opacity.dart
+	git.txt
+	lib/core/widgets/custom_card.dart
+	lib/features/student/student_otp_verification_dialog.dart
+	lib/features/student/student_tracking_screen.dart
+
+no changes added to commit (use "git add" and/or "git commit -a")

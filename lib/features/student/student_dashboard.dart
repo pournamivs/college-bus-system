@@ -1,234 +1,55 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:go_router/go_router.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/services/firestore_service.dart';
-import '../../../core/services/auth_service.dart';
-import '../../../core/services/google_directions_service.dart';
-import '../../../core/widgets/glass_morphic_card.dart';
-import '../../../core/widgets/custom_gradient_button.dart';
-import '../../../core/widgets/stat_card.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/widgets/custom_card.dart';
+import '../../core/widgets/custom_gradient_button.dart';
+import 'student_tracking_screen.dart';
+import 'student_otp_verification_dialog.dart';
+import 'profile/student_profile_screen.dart';
+import 'attendance/student_attendance_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
 
   @override
-  State<StudentDashboard> createState() => _StudentDashboardState();
+  State<StudentDashboard> createState() => StudentDashboardState();
 }
 
-class _StudentDashboardState extends State<StudentDashboard> {
-  final AuthService _authService = AuthService();
-  final FirestoreService _firestoreService = FirestoreService();
-  final GoogleDirectionsService _directionsService = GoogleDirectionsService();
-
-  String? _busIdString;
-  String? _driverIdString;
-  Map<String, dynamic>? _busData;
-  Map<String, dynamic>? _driverData;
-  String _statusMessage = 'Initializing Tracker...';
-
-  bool _permissionsGranted = false;
-  LatLng _currentBusPosition = const LatLng(10.0276, 76.3084);
-  LatLng _studentPosition = const LatLng(10.0276, 76.3084);
-  final MapController _mapController = MapController();
-
-  StreamSubscription<DocumentSnapshot>? _locationSubscription;
-  StreamSubscription<DocumentSnapshot>? _driverSubscription;
-
-  List<LatLng> _routePoints = [];
-  Map<String, dynamic>? _directionsData;
-  double _distanceToBus = 0.0;
-  bool _isLoadingRoute = false;
-
+class StudentDashboardState extends State<StudentDashboard> {
   int _currentIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeEnvironment();
-  }
+  final List<Widget> _screens = [
+    const StudentHomeScreen(),
+    const StudentTrackingScreen(),
+    const Scaffold(body: Center(child: Text("Fees Implementation Pending"))),
+    const StudentProfileScreen(),
+  ];
 
-  Future<void> _initializeEnvironment() async {
-    final status = await Permission.locationWhenInUse.request();
-    if (status.isGranted) {
-      if (mounted) setState(() => _permissionsGranted = true);
-      _fetchStudentData();
+  Future<void> handleTrackBus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isOtpVerified = prefs.getBool('isOtpVerified') ?? false;
+
+    if (isOtpVerified) {
+      if (mounted) {
+        setState(() => _currentIndex = 1);
+      }
     } else {
-      if (mounted)
-        setState(() => _statusMessage = 'Location permissions denied');
-      _fetchStudentData();
-    }
-  }
-
-  Future<void> _fetchStudentData() async {
-    final uid = await _authService.getUid();
-    if (uid == null) return;
-
-    try {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .get();
-      if (userDoc.exists) {
-        final data = userDoc.data()!;
-        _busIdString = (data['busId'] ?? '').toString();
-        _driverIdString = (data['driverId'] ?? '').toString();
-
-        if (_busIdString != null && _busIdString!.isNotEmpty) {
-          _fetchBusInfo();
-          _listenToBusPlatform();
-        } else {
-          if (mounted) setState(() => _statusMessage = 'No Bus Assigned');
-        }
+      if (!mounted) return;
+      final initialPhone = prefs.getString('userPhone') ?? '';
+      final result = await StudentOtpVerificationDialog.show(context, initialPhone: initialPhone);
+      if (result == true && mounted) {
+        setState(() => _currentIndex = 1);
       }
-    } catch (e) {
-      if (mounted) setState(() => _statusMessage = 'Error Fetching Profile');
     }
   }
 
-  Future<void> _fetchBusInfo() async {
-    final busDoc = await FirebaseFirestore.instance
-        .collection('buses')
-        .doc(_busIdString)
-        .get();
-    if (busDoc.exists && mounted) {
-      setState(() {
-        _busData = busDoc.data();
-      });
-    }
+  void switchTab(int index) {
+    if (mounted) setState(() => _currentIndex = index);
   }
 
-  void _calculateDistance() {
-    if (_permissionsGranted) {
-      Geolocator.getCurrentPosition()
-          .then((position) {
-            setState(() {
-              _studentPosition = LatLng(position.latitude, position.longitude);
-            });
-            _fetchDirectionsAndDistance();
-          })
-          .catchError((error) {
-            debugPrint('Error getting student position: $error');
-          });
-    }
-  }
-
-  Future<void> _fetchDirectionsAndDistance() async {
-    if (_currentBusPosition.latitude == 10.0276 &&
-        _currentBusPosition.longitude == 76.3084)
-      return;
-    setState(() => _isLoadingRoute = true);
-
-    try {
-      const LatLng destination = LatLng(9.9833, 76.2833);
-      final directionsData = await _directionsService.getDirections(
-        _currentBusPosition,
-        destination,
-      );
-
-      if (directionsData != null && mounted) {
-        final routePoints = _directionsService.decodePolyline(
-          directionsData['routes'][0]['overview_polyline']['points'],
-        );
-        final distance = _directionsService.getRouteDistance(directionsData);
-        setState(() {
-          _directionsData = directionsData;
-          _routePoints = routePoints;
-          _distanceToBus = distance;
-          _isLoadingRoute = false;
-        });
-      }
-    } catch (e) {
-      final distance =
-          Geolocator.distanceBetween(
-            _studentPosition.latitude,
-            _studentPosition.longitude,
-            _currentBusPosition.latitude,
-            _currentBusPosition.longitude,
-          ) /
-          1000;
-      setState(() {
-        _distanceToBus = distance;
-        _isLoadingRoute = false;
-      });
-    }
-  }
-
-  void _listenToBusPlatform() {
-    _locationSubscription = FirebaseFirestore.instance
-        .collection('bus_locations')
-        .doc(_busIdString)
-        .snapshots()
-        .listen((snap) {
-          if (snap.exists && snap.data() != null) {
-            final data = snap.data()!;
-            final double lat = (data['lat'] is num)
-                ? (data['lat'] as num).toDouble()
-                : 10.0276;
-            final double lng = (data['lng'] is num)
-                ? (data['lng'] as num).toDouble()
-                : 76.3084;
-            final newPos = LatLng(lat, lng);
-
-            if (mounted) {
-              setState(() {
-                _currentBusPosition = newPos;
-                _statusMessage = 'Live Tracking Active';
-                _mapController.move(_currentBusPosition, 16.0);
-              });
-              _calculateDistance();
-            }
-          } else {
-            if (mounted) setState(() => _statusMessage = 'Bus Offline');
-          }
-        });
-
-    _driverSubscription = FirebaseFirestore.instance
-        .collection('buses')
-        .doc(_busIdString)
-        .snapshots()
-        .listen((snap) async {
-          if (snap.exists && snap.data() != null) {
-            final busInfo = snap.data()!;
-            final driverIdFromBus = (busInfo['driverId'] ?? '').toString();
-            String? driverIdToResolve = driverIdFromBus.isNotEmpty
-                ? driverIdFromBus
-                : _driverIdString;
-
-            if (driverIdToResolve != null && driverIdToResolve.isNotEmpty) {
-              final dDoc = await FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(driverIdToResolve)
-                  .get();
-              if (dDoc.exists && mounted) {
-                setState(() {
-                  _driverData = dDoc.data();
-                  _statusMessage =
-                      'Driver: ${_driverData?['name'] ?? 'Assigned'}';
-                });
-              }
-            }
-          }
-        });
-  }
-
-  @override
-  void dispose() {
-    _locationSubscription?.cancel();
-    _driverSubscription?.cancel();
-    super.dispose();
-  }
-
-  void _onBottomNavTapped(int index) {
-    if (index == 2) {
-      context.push('/student/fees'); // Assuming Fees route exists
-    } else if (index == 3) {
-      setState(() => _currentIndex = index);
+  void _onTabTapped(int index) {
+    if (index == 1) {
+      handleTrackBus();
     } else {
       setState(() => _currentIndex = index);
     }
@@ -237,663 +58,370 @@ class _StudentDashboardState extends State<StudentDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Body Content based on index
-            Expanded(
-              child: IndexedStack(
-                index: _currentIndex,
-                children: [
-                  _buildHomeTab(),
-                  _buildTrackBusTab(),
-                  const Center(
-                    child: Text('Fees Tab'),
-                  ), // Handled via push usually, but here as fallback
-                  _buildProfileTab(),
-                ],
-              ),
+      body: _screens[_currentIndex],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
             ),
-
-            // Custom Bottom Navigation
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  InkWell(
-                    onTap: () => _onBottomNavTapped(0),
-                    child: _navBarItem(Icons.home, 'Home', _currentIndex == 0),
-                  ),
-                  InkWell(
-                    onTap: () => _onBottomNavTapped(1),
-                    child: _navBarItem(
-                      Icons.directions_bus,
-                      'Track Bus',
-                      _currentIndex == 1,
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () => _onBottomNavTapped(2),
-                    child: _navBarItem(
-                      Icons.account_balance_wallet,
-                      'Fees',
-                      _currentIndex == 2,
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () => _onBottomNavTapped(3),
-                    child: _navBarItem(
-                      Icons.person,
-                      'Profile',
-                      _currentIndex == 3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: _onTabTapped,
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.textSecondary,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.map_rounded), label: 'Track Bus'),
+            BottomNavigationBarItem(icon: Icon(Icons.payment_rounded), label: 'Fees'),
+            BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildHomeTab() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // Greeting header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'Good Morning, Student',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF6A1B9A),
-                      ),
-                    ),
-                  ],
-                ),
-                Stack(
-                  children: [
-                    const Icon(
-                      Icons.notifications_none,
-                      size: 28,
-                      color: Color(0xFF6A1B9A),
-                    ),
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
+class StudentHomeScreen extends StatelessWidget {
+  const StudentHomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Good Morning,',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
                         ),
-                        child: const SizedBox(width: 4, height: 4),
                       ),
+                      const Text(
+                        'Student',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Stat cards
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: const [
-                Expanded(
-                  child: StatCard(
-                    label: 'Attendance',
-                    value: '85%',
-                    icon: Icons.verified_user,
-                    backgroundColor: Color(0xFF6A1B9A),
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: StatCard(
-                    label: 'Pending Fees',
-                    value: '₹12,500',
-                    icon: Icons.account_balance_wallet,
-                    backgroundColor: Color(0xFFFF9800),
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: StatCard(
-                    label: 'Active Fines',
-                    value: '₹200',
-                    icon: Icons.warning_amber_rounded,
-                    backgroundColor: Color(0xFFD32F2F),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-
-          // My Bus Card
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    child: IconButton(
+                      icon: const Icon(Icons.notifications_outlined, color: AppColors.primary),
+                      onPressed: () {}, 
+                    ),
                   ),
                 ],
               ),
-              padding: const EdgeInsets.all(20),
-              child: Row(
+              const SizedBox(height: 24),
+
+              // Stats Cards grid
+              Row(
                 children: [
-                  const Icon(
-                    Icons.directions_bus,
-                    color: Color(0xFF6A1B9A),
-                    size: 32,
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentAttendanceScreen()));
+                      },
+                      child: _buildInfoCard(
+                        title: 'Attendance',
+                        value: '85%',
+                        icon: Icons.check_circle_outline,
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: _buildInfoCard(
+                      title: 'Pending Fees',
+                      value: '₹1200',
+                      icon: Icons.account_balance_wallet_outlined,
+                      color: AppColors.warning,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildInfoCard(
+                      title: 'Active Fines',
+                      value: '1 Fine',
+                      icon: Icons.warning_amber_rounded,
+                      color: AppColors.error,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              // My Bus Section
+              const Text(
+                'My Bus',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              CustomCard(
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Route A – Ernakulam',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Color(0xFF6A1B9A),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Bus No: ${_busData?['name'] ?? 'KL-07-AB-1234'}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
                         Row(
                           children: [
-                            Text(
-                              'Driver: ${_driverData?['name'] ?? 'Rajesh M'}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black87,
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
                               ),
+                              child: const Icon(Icons.directions_bus, color: AppColors.primary),
                             ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              '(+91 9876543210)',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.black54,
-                              ),
+                            const SizedBox(width: 16),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Route A - Ernakulam',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                Text(
+                                  'Bus #KL-01-AB-1234',
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ],
                     ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Divider(),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                              child: const Icon(Icons.person, size: 16, color: AppColors.primary),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'John Doe Driver +919497753716',
+                              style: TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.call, color: AppColors.primary),
+                          onPressed: () {},
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Quick Actions
+              const Text(
+                'Quick Actions',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: CustomGradientButton(
+                      text: 'Track Bus',
+                      icon: Icons.moving_sharp,
+                      onPressed: () {
+                         final parentState = context.findAncestorStateOfType<StudentDashboardState>();
+                         if(parentState != null) {
+                           parentState.handleTrackBus();
+                         }
+                      },
+                    ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.phone, color: Color(0xFF6A1B9A)),
-                    onPressed: () {},
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 1,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                         final parentState = context.findAncestorStateOfType<StudentDashboardState>();
+                         if(parentState != null) {
+                           parentState.switchTab(2); // Fees
+                         }
+                      },
+                      child: const Text('Pay Fees', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              // Notifications List
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Recent Alerts',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {}, 
+                    child: const Text('See All', style: TextStyle(color: AppColors.primary)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildNotificationItem('Late Fee: Semester 4 Bus Pass', 'Today, 09:41 AM', Icons.warning_amber_rounded, AppColors.error),
+              _buildNotificationItem('Route changed due to traffic', 'Yesterday, 14:00 PM', Icons.info_outline, AppColors.info),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: Colors.white, size: 28),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.white70,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationItem(String title, String time, IconData icon, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: CustomCard(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    time,
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 18),
-
-          // Quick Actions
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: CustomGradientButton(
-                    text: 'Track Bus',
-                    onPressed: () =>
-                        setState(() => _currentIndex = 1), // switch to map
-                    colors: const [Color(0xFF6A1B9A), Color(0xFF8E24AA)],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => context.push('/student/fees'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF6A1B9A),
-                      shadowColor: Colors.black12,
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: const BorderSide(
-                          color: Color(0xFF6A1B9A),
-                          width: 1.5,
-                        ),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text(
-                      'Pay Fees',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-
-          // Notifications
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text(
-                  'Recent Notifications',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                Text(
-                  'See All',
-                  style: TextStyle(
-                    color: Color(0xFF6A1B9A),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                _notificationCard(
-                  icon: Icons.warning_amber_rounded,
-                  color: const Color(0xFFD32F2F),
-                  title: 'Fine Alert',
-                  message: 'Please pay your pending fine of ₹200',
-                  time: '2h ago',
-                ),
-                const SizedBox(height: 8),
-                _notificationCard(
-                  icon: Icons.info_outline,
-                  color: const Color(0xFF6A1B9A),
-                  title: 'General Notification',
-                  message: 'Reminder: Tomorrow regular schedule',
-                  time: '2h ago',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTrackBusTab() {
-    return Stack(
-      children: [
-        FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            initialCenter: _currentBusPosition,
-            initialZoom: 15.0,
-            interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-            ),
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.trackmybus.app',
-            ),
-            PolylineLayer(
-              polylines: [
-                Polyline(
-                  points: _routePoints,
-                  color: const Color(0xFF6A1B9A),
-                  strokeWidth: 4.0,
-                ),
-              ],
-            ),
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: _currentBusPosition,
-                  width: 60,
-                  height: 60,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFF6A1B9A),
-                        width: 2,
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.directions_bus,
-                      color: Color(0xFF6A1B9A),
-                      size: 28,
-                    ),
-                  ),
-                ),
-                Marker(
-                  point: _studentPosition,
-                  width: 50,
-                  height: 50,
-                  child: const Icon(
-                    Icons.location_on,
-                    color: Colors.blue,
-                    size: 36,
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
-
-        // Return to location FAB
-        Positioned(
-          right: 16,
-          top: 16,
-          child: FloatingActionButton(
-            mini: true,
-            backgroundColor: Colors.white,
-            child: const Icon(Icons.my_location, color: Color(0xFF6A1B9A)),
-            onPressed: () => _mapController.move(_currentBusPosition, 16.0),
-          ),
-        ),
-
-        // Bottom Map Info Card
-        Positioned(
-          bottom: 20,
-          left: 20,
-          right: 20,
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Route A - KL-07',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(
-                      '~${_distanceToBus.toStringAsFixed(1)} km away',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE2D4F0),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.person, color: Color(0xFF6A1B9A)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Driver: ${_driverData?['name'] ?? 'Rajesh M'}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const Text(
-                            '+91 9876543210',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.phone, color: Colors.green),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProfileTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          Center(
-            child: CircleAvatar(
-              radius: 50,
-              backgroundColor: const Color(0xFFE2D4F0),
-              child: const Icon(
-                Icons.person,
-                size: 50,
-                color: Color(0xFF6A1B9A),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Rahul Kumar',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const Text(
-            'SNCCE/22/CS/1234',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
-          ),
-          const SizedBox(height: 32),
-
-          _profileMenuTile('Academic Info', Icons.school),
-          _profileMenuTile('Personal Info', Icons.person_outline),
-          _profileMenuTile('Transport Info', Icons.directions_bus),
-          _profileMenuTile(
-            'Change Password',
-            Icons.lock_outline,
-            onTap: () => context.push('/change-password'),
-          ),
-
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.logout, color: Colors.red),
-              label: const Text(
-                'Logout',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                side: const BorderSide(color: Colors.red, width: 1.5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              onPressed: () async {
-                await _authService.logout();
-                if (mounted) context.go('/login');
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _profileMenuTile(String title, IconData icon, {VoidCallback? onTap}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-        ],
-      ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Icon(icon, color: const Color(0xFF6A1B9A)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-    );
-  }
-
-  Widget _notificationCard({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String message,
-    required String time,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      child: Row(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.all(8),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: color,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  message,
-                  style: const TextStyle(fontSize: 13, color: Colors.black87),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            time,
-            style: const TextStyle(fontSize: 12, color: Colors.black45),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _navBarItem(IconData icon, String label, bool selected) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: selected ? const Color(0xFF6A1B9A) : Colors.black38,
-            size: 26,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: selected ? const Color(0xFF6A1B9A) : Colors.black38,
-            ),
-          ),
-        ],
       ),
     );
   }

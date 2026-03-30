@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:latlong2/latlong.dart';
-
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter/foundation.dart';
 class GoogleDirectionsService {
   static const String _apiKey = 'AIzaSyDUMMY_API_KEY'; // Replace with actual API key
   static const String _baseUrl = 'https://maps.googleapis.com/maps/api/directions/json';
@@ -22,7 +22,7 @@ class GoogleDirectionsService {
       }
       return null;
     } catch (e) {
-      print('Error fetching directions: $e');
+      debugPrint('Error fetching directions: $e');
       return null;
     }
   }

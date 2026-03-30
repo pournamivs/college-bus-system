@@ -1,237 +1,246 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../core/services/firestore_service.dart';
-import '../../../core/services/auth_service.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/glass_morphic_card.dart';
+import '../../../core/widgets/custom_card.dart';
 import '../../../core/widgets/custom_gradient_button.dart';
 
-class AdminDashboardScreen extends StatefulWidget {
+class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
-
-  @override
-  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
-}
-
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  final FirestoreService _firestoreService = FirestoreService();
-  final AuthService _authService = AuthService();
-  
-  bool _isLoading = true;
-  Map<String, dynamic> _financialStats = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _loadStats();
-  }
-
-  Future<void> _loadStats() async {
-    setState(() => _isLoading = true);
-    final stats = await _firestoreService.getAdminFinancialStats();
-    setState(() {
-      _financialStats = stats;
-      _isLoading = false;
-    });
-  }
-
-  Future<void> _seedBuses() async {
-    setState(() => _isLoading = true);
-    try {
-      final db = FirebaseFirestore.instance.collection('buses');
-      for (int i = 1; i <= 10; i++) {
-        await db.doc(i.toString()).set({
-          'name': 'Bus $i',
-          'capacity': 50,
-          'status': 'offline',
-          'currentTripId': null,
-          'driverId': null,
-        }, SetOptions(merge: true));
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Buses 1 to 10 Seeded Successfully!')));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Seeding Failed: $e')));
-      }
-    }
-    setState(() {
-      _isLoading = false;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Dashboard'),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadStats),
-          IconButton(
-            icon: const Icon(Icons.password),
-            tooltip: 'Change Password',
-            onPressed: () => context.push('/change-password'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout, color: AppColors.error),
-            onPressed: () async {
-              await _authService.logout();
-              if (mounted) context.go('/login');
-            },
-          ),
-        ],
-      ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : RefreshIndicator(
-            onRefresh: _loadStats,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildFinancialOverview(),
-                  const SizedBox(height: 32),
-                  const Text('Vehicle Tracking', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  CustomGradientButton(
-                    text: 'LIVE MONITOR ON MAP',
-                    icon: Icons.map_outlined,
-                    onPressed: () => context.push('/admin/tracking'),
-                  ),
-                  const SizedBox(height: 32),
-                  const Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: _actionButton('Payments', Icons.payments_outlined, () => context.push('/admin/payments'))),
-                      const SizedBox(width: 12),
-                      Expanded(child: _actionButton('Users', Icons.people_outline, () => context.push('/admin/users'))),
+                      Text(
+                        'Welcome Back,',
+                        style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                      ),
+                      const Text(
+                        'Administrator',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(child: _actionButton('Manage Buses', Icons.directions_bus, () => Navigator.pushNamed(context, '/admin/buses'))),
-                    ],
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.notifications_outlined, color: AppColors.primary),
+                      onPressed: () {},
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(child: _actionButton('Emergencies', Icons.warning_amber_rounded, () => context.push('/admin/emergencies'))),
-                      const SizedBox(width: 12),
-                      Expanded(child: _actionButton('Drivers', Icons.drive_eta, () => context.push('/admin/drivers'))),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(child: _actionButton('Maintenance', Icons.build_circle_outlined, () => context.push('/admin/maintenance'))),
-                      const SizedBox(width: 12),
-                      Expanded(child: _actionButton('Staff CRM', Icons.badge_outlined, () => context.push('/admin/staff'))),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(child: _actionButton('Seed Buses', Icons.upload_file, _seedBuses)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _actionButton('Reports', Icons.bar_chart, () => context.push('/admin/reports'))),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-                  const Text('Active Fleet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  _buildFleetList(),
                 ],
               ),
-            ),
+              const SizedBox(height: 24),
+
+              // Top Cards
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      title: 'Total Students',
+                      value: '1,240',
+                      icon: Icons.school_rounded,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildStatCard(
+                      title: 'Total Buses',
+                      value: '24',
+                      icon: Icons.directions_bus_rounded,
+                      color: AppColors.success,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildStatCard(
+                title: 'Pending Fees Collection',
+                value: '₹4,50,000',
+                icon: Icons.account_balance_wallet_rounded,
+                color: AppColors.warning,
+                isFullWidth: true,
+              ),
+              const SizedBox(height: 32),
+
+              // Quick Actions
+              const Text(
+                'Quick Actions',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildQuickActionBtn('Add\nStudent', Icons.person_add_rounded, context),
+                  _buildQuickActionBtn('Add\nDriver', Icons.badge_rounded, context),
+                  _buildQuickActionBtn('View\nReports', Icons.bar_chart_rounded, context),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              // Recent Activity
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Recent Activity',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Text('See All', style: TextStyle(color: AppColors.primary)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildActivityItem('Fee Payment', 'Alex Johnson paid ₹1,200', '10 mins ago', Icons.payment_rounded, AppColors.success),
+              _buildActivityItem('Maintenance', 'Bus KL-01-AB-1234 reported issue', '2 hours ago', Icons.build_circle_rounded, AppColors.warning),
+              _buildActivityItem('Fee Payment', 'Sarah Smith paid ₹2,500', '3 hours ago', Icons.payment_rounded, AppColors.success),
+            ],
           ),
+        ),
+      ),
     );
   }
 
-  Widget _buildFinancialOverview() {
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    bool isFullWidth = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: Colors.white, size: 28),
+              if (isFullWidth)
+                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionBtn(String title, IconData icon, BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Financial Overview', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(child: _statCard('FEES RECEIVED', '₹${_financialStats['totalReceived']?.toStringAsFixed(0) ?? '0'}', AppColors.success)),
-            const SizedBox(width: 12),
-            Expanded(child: _statCard('PENDING DUES', '₹${_financialStats['totalPending']?.toStringAsFixed(0) ?? '0'}', AppColors.error)),
-          ],
+        Container(
+          height: 60,
+          width: 60,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+          ),
+          child: IconButton(
+            icon: Icon(icon, color: AppColors.primary, size: 28),
+            onPressed: () {},
+          ),
         ),
-        const SizedBox(height: 12),
-        _statCard('TOTAL PENALTY COLLECTED', '₹${_financialStats['totalPenalty']?.toStringAsFixed(0) ?? '0'}', AppColors.warning, isWide: true),
+        const SizedBox(height: 8),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+        ),
       ],
     );
   }
 
-  Widget _statCard(String label, String value, Color color, {bool isWide = false}) {
-    return GlassMorphicCard(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-          const SizedBox(height: 8),
-          Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
-        ],
-      ),
-    );
-  }
-
-  Widget _actionButton(String label, IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
-        ),
-        child: Column(
+  Widget _buildActivityItem(String type, String desc, String time, IconData icon, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: CustomCard(
+        padding: const EdgeInsets.all(12),
+        child: Row(
           children: [
-            Icon(icon, color: AppColors.primary),
-            const SizedBox(height: 8),
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(type, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text(time, style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(desc, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-
-  Widget _buildFleetList() {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: _firestoreService.streamBuses(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-        final buses = snapshot.data!;
-        if (buses.isEmpty) return const Text('No buses registered.');
-        
-        return Column(
-          children: buses.map((bus) => Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: ListTile(
-              onTap: () => context.push('/admin/buses/${bus['id']}'),
-              leading: const Icon(Icons.directions_bus, color: AppColors.primary),
-              title: Text('Bus ${bus['number'] ?? 'N/A'}'),
-              subtitle: Text('Status: ${bus['status']?.toUpperCase() ?? 'OFFLINE'}'),
-              trailing: Icon(
-                Icons.circle, 
-                color: bus['status'] == 'active' ? AppColors.success : Colors.grey,
-                size: 12,
-              ),
-            ),
-          )).toList(),
-        );
-      },
-    );
-  }
 }
-

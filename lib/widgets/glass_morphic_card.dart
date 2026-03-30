@@ -23,11 +23,11 @@ class GlassMorphCard extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: blurIntensity, sigmaY: blurIntensity),
         child: Container(
           decoration: BoxDecoration(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             borderRadius: borderRadius,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 10,
                 offset: Offset(0, 5),
               ),

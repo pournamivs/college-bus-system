@@ -137,7 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         value: _role,
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.5),
+                          fillColor: Colors.white.withValues(alpha: 0.5),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -182,7 +182,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         labelText: label,
         prefixIcon: Icon(icon, color: AppColors.primary),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.5),
+        fillColor: Colors.white.withValues(alpha: 0.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,

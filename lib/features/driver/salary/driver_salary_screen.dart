@@ -75,7 +75,7 @@ class _DriverSalaryScreenState extends State<DriverSalaryScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: status == 'Paid' ? AppColors.success.withOpacity(0.2) : AppColors.error.withOpacity(0.2),
+                          color: status == 'Paid' ? AppColors.success.withValues(alpha: 0.2) : AppColors.error.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(

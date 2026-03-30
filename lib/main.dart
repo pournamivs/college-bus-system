@@ -4,12 +4,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/constants/app_theme.dart';
 import 'core/constants/app_colors.dart';
 import 'core/router.dart';
-import 'bus_tracking/main_app.dart';
 import 'core/services/notification_service.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'dart:ui';
 import 'dart:async';
 
 @pragma('vm:entry-point')
@@ -28,8 +25,8 @@ void main() async {
   } catch (e) {
     debugPrint("Init error: $e");
   }
-  
-  runApp(const CollegeBusApp());
+
+  runApp(const ProviderScope(child: TrackMyBusApp()));
 }
 
 class TrackMyBusApp extends StatelessWidget {

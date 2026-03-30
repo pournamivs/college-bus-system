@@ -11,7 +11,7 @@ class AdminPaymentsScreen extends StatefulWidget {
 }
 
 class _AdminPaymentsScreenState extends State<AdminPaymentsScreen> {
-  final FirestoreService _firestoreService = FirestoreService();
+//  final FirestoreService _firestoreService = FirestoreService();
   bool _isLoading = true;
   
   List<Map<String, dynamic>> _allStudents = [];
@@ -130,7 +130,7 @@ class _AdminPaymentsScreenState extends State<AdminPaymentsScreen> {
                             child: ListTile(
                               contentPadding: const EdgeInsets.all(16),
                               leading: CircleAvatar(
-                                backgroundColor: statusColor.withOpacity(0.2),
+                                backgroundColor: statusColor.withValues(alpha: 0.2),
                                 child: Icon(
                                   status == 'Paid' ? Icons.check_circle : (status == 'Overdue' ? Icons.warning : Icons.pending_actions),
                                   color: statusColor,
@@ -153,7 +153,7 @@ class _AdminPaymentsScreenState extends State<AdminPaymentsScreen> {
                               ),
                               trailing: Chip(
                                 label: Text(status),
-                                backgroundColor: statusColor.withOpacity(0.1),
+                                backgroundColor: statusColor.withValues(alpha: 0.1),
                                 labelStyle: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
                                 side: BorderSide.none,
                               ),

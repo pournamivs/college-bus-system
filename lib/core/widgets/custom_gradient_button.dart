@@ -34,7 +34,7 @@ class CustomGradientButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: (colors?.first ?? AppColors.primary).withOpacity(0.3),
+            color: (colors?.first ?? AppColors.primary).withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),

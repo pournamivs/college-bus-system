@@ -1,0 +1,120 @@
+﻿Analyzing college-bus-system...                                 
+
+   info - 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre - college-bus-system\lib\core\constants\app_theme.dart:13:9 - deprecated_member_use
+warning - Unused import: 'package:flutter/material.dart' - college-bus-system\lib\core\router.dart:1:8 - unused_import
+warning - Unused import: 'package:track_my_bus/features/student/fees/student_fines_screen.dart' - college-bus-system\lib\core\router.dart:7:8 - unused_import
+   info - Don't invoke 'print' in production code - college-bus-system\lib\core\services\auth_service.dart:30:7 - avoid_print
+warning - Unused import: 'package:firebase_core/firebase_core.dart' - college-bus-system\lib\core\services\notification_service.dart:2:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\core\widgets\custom_gradient_button.dart:35:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\core\widgets\glass_morphic_card.dart:44:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\core\widgets\stat_card.dart:30:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\core\widgets\stat_card.dart:54:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\core\widgets\status_badge.dart:46:22 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\core\widgets\status_badge.dart:48:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\core\widgets\status_chip.dart:26:23 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - college-bus-system\lib\features\admin\dashboard\admin_dashboard_screen.dart:90:44 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\admin\dashboard\admin_dashboard_screen.dart:161:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\admin\dashboard\admin_dashboard_screen.dart:168:50 - deprecated_member_use
+warning - Unused import: 'package:http/http.dart' - college-bus-system\lib\features\auth\login_screen.dart:3:8 - unused_import
+warning - Unused import: 'dart:convert' - college-bus-system\lib\features\auth\login_screen.dart:4:8 - unused_import
+warning - Unused import: 'package:shared_preferences/shared_preferences.dart' - college-bus-system\lib\features\auth\login_screen.dart:6:8 - unused_import
+warning - Unused import: '../../core/constants/api_constants.dart' - college-bus-system\lib\features\auth\login_screen.dart:7:8 - unused_import
+   info - Statements in an if should be enclosed in a block - college-bus-system\lib\features\auth\login_screen.dart:50:30 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - college-bus-system\lib\features\auth\login_screen.dart:51:36 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - college-bus-system\lib\features\auth\login_screen.dart:52:35 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - college-bus-system\lib\features\auth\login_screen.dart:53:36 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - college-bus-system\lib\features\auth\login_screen.dart:54:37 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - college-bus-system\lib\features\auth\login_screen.dart:55:14 - curly_braces_in_flow_control_structures
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\auth\login_screen.dart:97:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\auth\login_screen.dart:236:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\auth\login_screen.dart:247:29 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - college-bus-system\lib\features\auth\login_screen.dart:252:11 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\driver\dashboard\driver_main_screen.dart:120:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\driver\dashboard\driver_main_screen.dart:156:54 - deprecated_member_use
+   info - Constructors for public widgets should have a named 'key' parameter - college-bus-system\lib\features\driver\driver_dashboard.dart:3:7 - use_key_in_widget_constructors
+   info - Constructors for public widgets should have a named 'key' parameter - college-bus-system\lib\features\driver\driver_dashboard.dart:28:7 - use_key_in_widget_constructors
+   info - Constructors for public widgets should have a named 'key' parameter - college-bus-system\lib\features\driver\driver_dashboard.dart:43:7 - use_key_in_widget_constructors
+   info - Constructors for public widgets should have a named 'key' parameter - college-bus-system\lib\features\driver\driver_dashboard.dart:58:7 - use_key_in_widget_constructors
+   info - Constructors for public widgets should have a named 'key' parameter - college-bus-system\lib\features\driver\driver_dashboard.dart:73:7 - use_key_in_widget_constructors
+   info - Constructors for public widgets should have a named 'key' parameter - college-bus-system\lib\features\driver\driver_dashboard.dart:88:7 - use_key_in_widget_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\parent\dashboard\parent_dashboard_screen.dart:114:69 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\parent\dashboard\parent_dashboard_screen.dart:200:78 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\parent\dashboard\parent_dashboard_screen.dart:208:72 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\parent\dashboard\parent_dashboard_screen.dart:208:109 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\parent\dashboard\parent_dashboard_screen.dart:224:85 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\parent\dashboard\parent_dashboard_screen.dart:244:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\parent\dashboard\parent_dashboard_screen.dart:245:51 - deprecated_member_use
+warning - Unused import: 'dart:convert' - college-bus-system\lib\features\staff\dashboard\staff_dashboard_screen.dart:4:8 - unused_import
+warning - Unused import: '../../../core/constants/api_constants.dart' - college-bus-system\lib\features\staff\dashboard\staff_dashboard_screen.dart:8:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\staff\dashboard\staff_dashboard_screen.dart:79:35 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - college-bus-system\lib\features\staff\dashboard\staff_dashboard_screen.dart:86:30 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\staff\dashboard\staff_dashboard_screen.dart:118:49 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\staff\dashboard\staff_dashboard_screen.dart:177:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\staff\dashboard\staff_dashboard_screen.dart:221:36 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\staff\dashboard\staff_dashboard_screen.dart:223:55 - deprecated_member_use
+warning - Unused import: 'package:provider/provider.dart' - college-bus-system\lib\features\student\dashboard\student_dashboard_screen.dart:4:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\dashboard\student_dashboard_screen.dart:87:42 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\dashboard\student_dashboard_screen.dart:150:25 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\dashboard\student_dashboard_screen.dart:152:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\dashboard\student_dashboard_screen.dart:202:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\dashboard\student_dashboard_screen.dart:203:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\dashboard\student_dashboard_screen.dart:271:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\dashboard\student_dashboard_screen.dart:277:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\notifications\student_notifications_screen.dart:46:60 - deprecated_member_use
+warning - Unused import: 'package:go_router/go_router.dart' - college-bus-system\lib\features\student\profile\student_profile_screen.dart:2:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\profile\student_profile_screen.dart:50:67 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\profile\student_profile_screen.dart:56:67 - deprecated_member_use
+   info - Constructors for public widgets should have a named 'key' parameter - college-bus-system\lib\features\student\student_dashboard.dart:4:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - college-bus-system\lib\features\student\student_dashboard.dart:6:3 - library_private_types_in_public_api
+   info - Don't invoke 'print' in production code - college-bus-system\lib\features\student\student_dashboard.dart:60:5 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\student_dashboard.dart:74:35 - deprecated_member_use
+   info - The 'child' argument should be last in widget constructor invocations - college-bus-system\lib\features\student\student_dashboard.dart:85:23 - sort_child_properties_last
+warning - Unused import: 'dart:convert' - college-bus-system\lib\features\student\tracking\student_tracking_screen.dart:5:8 - unused_import
+warning - Unused import: '../../../core/constants/api_constants.dart' - college-bus-system\lib\features\student\tracking\student_tracking_screen.dart:7:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\tracking\student_tracking_screen.dart:104:83 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\tracking\student_tracking_screen.dart:105:69 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\tracking\student_tracking_screen.dart:171:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\features\student\tracking\student_tracking_screen.dart:173:57 - deprecated_member_use
+warning - Unused import: 'package:provider/provider.dart' - college-bus-system\lib\main.dart:6:8 - unused_import
+   info - Constructors for public widgets should have a named 'key' parameter - college-bus-system\lib\widgets\custom_button.dart:8:3 - use_key_in_widget_constructors
+   info - Constructors in '@immutable' classes should be declared as 'const' - college-bus-system\lib\widgets\custom_button.dart:8:3 - prefer_const_constructors_in_immutables
+   info - Invalid use of a private type in a public API - college-bus-system\lib\widgets\custom_button.dart:15:3 - library_private_types_in_public_api
+   info - Parameter 'key' could be a super parameter - college-bus-system\lib\widgets\empty_state.dart:7:9 - use_super_parameters
+   info - Parameter 'key' could be a super parameter - college-bus-system\lib\widgets\glass_morphic_card.dart:10:9 - use_super_parameters
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\widgets\glass_morphic_card.dart:26:26 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - college-bus-system\lib\widgets\glass_morphic_card.dart:30:37 - deprecated_member_use
+   info - Constructors for public widgets should have a named 'key' parameter - college-bus-system\lib\widgets\status_badge.dart:7:3 - use_key_in_widget_constructors
+   info - Constructors in '@immutable' classes should be declared as 'const' - college-bus-system\lib\widgets\status_badge.dart:7:3 - prefer_const_constructors_in_immutables
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\core\services\firestore_service.dart:45:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\core\services\firestore_service.dart:46:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\core\services\firestore_service.dart:55:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\core\services\firestore_service.dart:56:7 - use_null_aware_elements
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:349:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:375:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:395:43 - unnecessary_cast
+warning - Unnecessary cast - lib\core\services\firestore_service.dart:410:43 - unnecessary_cast
+   info - Don't invoke 'print' in production code - lib\core\services\google_directions_service.dart:24:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\admin\admin_reports_screen.dart:85:7 - avoid_print
+  error - The named parameter 'settings' is required, but there's no corresponding argument - lib\features\admin\admin_sos_screen.dart:28:26 - missing_required_argument
+  error - Too many positional arguments: 0 expected, but 1 found - lib\features\admin\admin_sos_screen.dart:28:37 - extra_positional_arguments_could_be_named
+  error - The named parameter 'id' is required, but there's no corresponding argument - lib\features\admin\admin_sos_screen.dart:51:26 - missing_required_argument
+  error - Too many positional arguments: 0 expected, but 4 found - lib\features\admin\admin_sos_screen.dart:52:7 - extra_positional_arguments_could_be_named
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\buses\admin_bus_drilldown_screen.dart:15:26 - unused_field
+   info - The parameter name 'sum' matches a visible type name - lib\features\admin\buses\admin_bus_drilldown_screen.dart:84:46 - avoid_types_as_parameter_names
+   info - The parameter name 'sum' matches a visible type name - lib\features\admin\buses\admin_bus_drilldown_screen.dart:85:44 - avoid_types_as_parameter_names
+warning - The value of the field '_mapController' isn't used - lib\features\admin\dashboard\admin_live_tracking_screen.dart:15:24 - unused_field
+warning - The value of the field '_markers' isn't used - lib\features\admin\dashboard\admin_live_tracking_screen.dart:16:31 - unused_field
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\payments\admin_payment_list_screen.dart:15:26 - unused_field
+warning - The value of the field '_firestoreService' isn't used - lib\features\admin\payments\admin_payments_screen.dart:14:26 - unused_field
+warning - The value of the field '_isProcessing' isn't used - lib\features\admin\staff\admin_staff_management_screen.dart:19:8 - unused_field
+   info - Don't invoke 'print' in production code - lib\features\driver\driver_attendance_screen.dart:49:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\driver\driver_attendance_screen.dart:74:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\driver\driver_attendance_screen.dart:100:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\driver\driver_attendance_screen.dart:128:7 - avoid_print
+warning - The value of the local variable 'isPresent' isn't used - lib\features\driver\driver_attendance_screen.dart:219:31 - unused_local_variable
+   info - Don't invoke 'print' in production code - lib\features\driver\driver_profile_screen.dart:52:7 - avoid_print
+warning - The member 'setState' can only be used within instance members of subclasses of 'State' - lib\features\student\student_dashboard.dart:250:40 - invalid_use_of_protected_member
+warning - The member 'setState' can only be used within instance members of subclasses of 'State' - lib\features\student\student_dashboard.dart:269:40 - invalid_use_of_protected_member
+  error - Target of URI doesn't exist: 'bus_tracking/main_app.dart' - lib\main.dart:7:8 - uri_does_not_exist
+  error - The name 'CollegeBusApp' isn't a class - lib\main.dart:32:16 - creation_with_non_type
+

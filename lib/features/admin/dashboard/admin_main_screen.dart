@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/services/firestore_service.dart';
-import '../../../core/services/auth_service.dart';
 import 'admin_dashboard_screen.dart';
-import 'admin_live_tracking_screen.dart';
 import '../students/admin_students_screen.dart';
-import '../drivers/admin_drivers_screen.dart';
+import '../drivers/admin_driver_management_screen.dart';
 import '../fees/admin_fees_screen.dart';
 import '../settings/admin_settings_screen.dart';
-import '../payments/admin_payments_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({super.key});
@@ -23,30 +19,39 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
   final List<Widget> _screens = [
     const AdminDashboardScreen(),
     const AdminUsersScreen(),
-    const AdminLiveTrackingScreen(),
+    const AdminDriverManagementScreen(),
     const AdminEmergenciesScreen(),
     const AdminRoutesScreen(),
-    const AdminPaymentsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Stats'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Users'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
-          BottomNavigationBarItem(icon: Icon(Icons.warning), label: 'SOS'),
-          BottomNavigationBarItem(icon: Icon(Icons.alt_route), label: 'Routes'),
-          BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Fees'),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) => setState(() => _currentIndex = index),
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.textSecondary,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Dashboard'),
+            BottomNavigationBarItem(icon: Icon(Icons.school_rounded), label: 'Students'),
+            BottomNavigationBarItem(icon: Icon(Icons.directions_bus_rounded), label: 'Drivers'),
+            BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_rounded), label: 'Fees'),
+            BottomNavigationBarItem(icon: Icon(Icons.settings_rounded), label: 'Settings'),
+          ],
+        ),
       ),
     );
   }

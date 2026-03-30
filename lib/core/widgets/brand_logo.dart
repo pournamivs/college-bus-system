@@ -38,7 +38,7 @@ class BrandLogo extends StatelessWidget {
           borderRadius: BorderRadius.circular(size * 0.24),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.22),
+              color: AppColors.primary.withValues(alpha: 0.22),
               blurRadius: 12,
               offset: const Offset(0, 5),
             ),
@@ -68,8 +68,8 @@ class BrandLogo extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(0.18),
-        border: Border.all(color: Colors.white.withOpacity(0.35)),
+        color: Colors.white.withValues(alpha: 0.18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
       ),
       child: Center(child: stack),
     );
